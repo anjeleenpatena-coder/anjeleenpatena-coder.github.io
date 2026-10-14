@@ -82,8 +82,8 @@ const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const peso=n=>"₱"+Number(n||0).toLocaleString("en-PH");
 const TYPES=["House & Lot","Condo","Lot / Land"];
-const DEF={brand:"Welcome Home-Rizal PH",name:"Anjeleen Pateña",title:"Real Estate Salesperson",realty:"Aeroestate Realty Corp",showAccreditation:false,accreditationNumber:"",accreditationPendingText:"Accreditation transfer in process",yearsInSales:"15+",familiesHelped:"",messenger:"",viber:"",whatsapp:"https://wa.me/639338552646",calendly:"",phone:"0933-855-2646",photoHero:"",photoFormal:"",photoLaptop:"",logo:"",birBadge:"",reviews:[{text:"",who:""},{text:"",who:""}]};
-const SLOTS=[["photoHero","Top section photo","assets/hero.jpg"],["photoFormal","“Why families work with me” photo","assets/formal.jpg"],["photoLaptop","OFW section photo","assets/laptop.jpg"],["logo","Realty logo (small, in header)","assets/aeroestate-logo.png"],["birBadge","BIR Registration Seal Badge",""]];
+const DEF={brand:"Welcome Home-Rizal PH",name:"Anjeleen Pateña",title:"Real Estate Salesperson",realty:"Aeroestate Realty Corp",showAccreditation:true,accreditationLabel:"PRC License No.",accreditationNumber:"0022897",accreditationPendingText:"Accreditation transfer in process",yearsInSales:"15+",familiesHelped:"",messenger:"",viber:"",whatsapp:"https://wa.me/639338552646",calendly:"",phone:"0933-855-2646",photoHero:"",photoFormal:"",photoLaptop:"",logo:"",birBadge:"",reviews:[{text:"",who:""},{text:"",who:""}]};
+const SLOTS=[["photoHero","Top section photo","assets/hero.jpg"],["photoFormal","“Why families work with me” photo","assets/formal.jpg"],["photoLaptop","OFW section photo","assets/laptop.jpg"],["logo","Realty logo (small, in header)","assets/aeroestate-logo.png"],["birBadge","BIR Registration Seal Badge","assets/bir-seal-badge.png"]];
 let SITE={...DEF}, LIST=[], LEADS=[], view="profile", confirmId=null;
 
 function toast(t){const d=document.createElement("div");d.className="toast";d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),2600);}
@@ -123,8 +123,8 @@ function vProfile(){
     <div class="row">${f("brand","Brand / page name")}${f("name","Your name")}</div>
     <div class="row">${f("title","Title")}${f("realty","Realty / broker")}</div>
     <h3 style="font-size:18px">Accreditation</h3>
-    <label class="check"><input type="checkbox" id="p-show" name="showAccreditation" ${s.showAccreditation?"checked":""}> Show my PRC/DHSUD accreditation number</label>
-    <div class="row">${f("accreditationNumber","Accreditation no.")}${f("accreditationPendingText","Text to show while hidden","Accreditation transfer in process")}</div>
+    <label class="check"><input type="checkbox" id="p-show" name="showAccreditation" ${s.showAccreditation?"checked":""}> Show my PRC license / accreditation number</label>
+    <div class="row">${f("accreditationLabel","Label","PRC License No.")}${f("accreditationNumber","Number")}</div><div class="row">${f("accreditationPendingText","Text to show while hidden","Accreditation transfer in process")}</div>
     <h3 style="font-size:18px">Numbers</h3>
     <div class="row">${f("yearsInSales","Years in sales","15+")}${f("familiesHelped","Families helped","Leave blank to hide")}</div>
     <h3 style="font-size:18px">Contact links</h3>
@@ -190,7 +190,7 @@ document.addEventListener("submit",async e=>{
   e.preventDefault(); const f=e.target, fd=new FormData(f);
   if(f.id==="f-login"){ const {error}=await sb.auth.signInWithPassword({email:fd.get("email").trim(),password:fd.get("password")}); if(error) showLogin(error.message==="Invalid login credentials"?"Wrong email or password.":error.message); return; }
   if(f.id==="f-profile"){
-    ["brand","name","title","realty","accreditationNumber","accreditationPendingText","yearsInSales","familiesHelped","messenger","viber","whatsapp","calendly","phone"].forEach(k=>SITE[k]=(fd.get(k)||"").trim());
+    ["brand","name","title","realty","accreditationLabel","accreditationNumber","accreditationPendingText","yearsInSales","familiesHelped","messenger","viber","whatsapp","calendly","phone"].forEach(k=>SITE[k]=(fd.get(k)||"").trim());
     SITE.showAccreditation=!!fd.get("showAccreditation");
     SITE.reviews=[0,1].map(i=>({text:(fd.get("rv"+i)||"").trim(),who:(fd.get("rw"+i)||"").trim()}));
     await saveSite(); return;

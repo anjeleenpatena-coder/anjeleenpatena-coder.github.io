@@ -139,7 +139,7 @@ form .btn{width:100%}
 
 .bir{background:var(--mist);padding:40px 0;border-top:1px solid var(--line)}
 .bir .wrap{display:flex;flex-wrap:wrap;align-items:center;gap:20px 28px}
-.bir img{width:180px;height:auto;background:#fff;border:1px solid var(--line);border-radius:10px;padding:6px}
+.bir img{width:min(100%,340px);height:auto;background:#fff;border:1px solid var(--line);border-radius:10px;padding:6px}
 .bir h3{font-family:var(--sans);font-size:16px;font-weight:600;color:var(--navy)}
 .bir p{margin:4px 0 0;color:var(--muted);font-size:14px;max-width:52ch}
 
@@ -288,7 +288,7 @@ footer a{color:#BFCDE0}
 <section class="bir" id="birBox" hidden>
   <div class="wrap">
     <img id="birImg" alt="BIR Registration Seal Badge">
-    <div><h3>BIR registered</h3><p>Scan the QR code on the seal badge to verify my BIR registration as a real estate salesperson.</p></div>
+    <div><h3>BIR registered</h3><p>Scan the QR code on the seal badge to verify my BIR registration as a real estate salesperson.</p><p id="prcLine"></p></div>
   </div>
 </section>
 </main>
@@ -302,10 +302,10 @@ var sb = window.supabase ? window.supabase.createClient(SB_URL,SB_KEY) : null;
 /* Defaults. Your saved Admin settings override these. */
 var CONFIG = {
   brand:"Welcome Home-Rizal PH", name:"Anjeleen Pateña", title:"Real Estate Salesperson", realty:"Aeroestate Realty Corp",
-  showAccreditation:false, accreditationNumber:"", accreditationPendingText:"Accreditation transfer in process",
+  showAccreditation:true, accreditationLabel:"PRC License No.", accreditationNumber:"0022897", accreditationPendingText:"Accreditation transfer in process",
   yearsInSales:"15+", familiesHelped:"",
   messenger:"", viber:"", whatsapp:"https://wa.me/639338552646", calendly:"", phone:"0933-855-2646",
-  photoHero:"assets/hero.jpg", photoFormal:"assets/formal.jpg", photoLaptop:"assets/laptop.jpg", logo:"assets/aeroestate-logo.png", birBadge:"",
+  photoHero:"assets/hero.jpg", photoFormal:"assets/formal.jpg", photoLaptop:"assets/laptop.jpg", logo:"assets/aeroestate-logo.png", birBadge:"assets/bir-seal-badge.png",
   reviews:[]
 };
 var LISTINGS = [];
@@ -324,7 +324,7 @@ function link(id,url){ var a=$(id); if(url){a.href=url;a.hidden=false}else{a.hid
 
 function applyConfig(){
   document.querySelectorAll("[data-cfg]").forEach(function(el){el.textContent = CONFIG[el.dataset.cfg] || ""});
-  $("#accr").textContent = CONFIG.showAccreditation && CONFIG.accreditationNumber ? "PRC/DHSUD Accreditation No. " + CONFIG.accreditationNumber : (CONFIG.accreditationPendingText||"");
+  $("#accr").textContent = CONFIG.showAccreditation && CONFIG.accreditationNumber ? (CONFIG.accreditationLabel||"PRC License No.") + " " + CONFIG.accreditationNumber : (CONFIG.accreditationPendingText||"");
   link("#lnkMessenger",CONFIG.messenger); link("#lnkViber",CONFIG.viber); link("#lnkWhatsapp",CONFIG.whatsapp); link("#lnkCalendly",CONFIG.calendly);
   $("#phoneLine").textContent = CONFIG.phone ? "Mobile / Viber: " + CONFIG.phone : "";
   $("#familiesBox").hidden = !CONFIG.familiesHelped;
@@ -332,6 +332,7 @@ function applyConfig(){
   setPhoto($("#formalBox"),CONFIG.photoFormal,"Portrait of "+CONFIG.name);
   setPhoto($("#laptopBox"),CONFIG.photoLaptop,CONFIG.name+" assisting a client online");
   if(CONFIG.logo){ $("#logoSmall").src=CONFIG.logo; $("#logoSmall").hidden=false; }
+  $("#prcLine").textContent = CONFIG.showAccreditation && CONFIG.accreditationNumber ? (CONFIG.accreditationLabel||"PRC License No.")+" "+CONFIG.accreditationNumber : "";
   if(CONFIG.birBadge){ $("#birImg").src=CONFIG.birBadge; $("#birBox").hidden=false; }
   var rv=(CONFIG.reviews||[]).filter(function(r){return r&&r.text});
   $("#quotes").innerHTML = rv.map(function(r){return '<div class="quote"><p>“'+esc(r.text)+'”</p><span>'+esc(r.who||"")+'</span></div>'}).join("");
