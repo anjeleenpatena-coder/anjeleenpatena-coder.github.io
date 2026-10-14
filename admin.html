@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Website Admin · Welcome Home-Rizal PH</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#1F3A5F;--navy-deep:#142A47;--mist:#F4F7FB;--coral:#E8735A;--coral-dark:#C95A42;--ink:#1B2430;--muted:#5A6B80;--line:#D9E1EA;--white:#fff;--good:#1E5B3A;--good-bg:#E4F2EA;--bad:#B3261E;--bad-bg:#FBE7E4;--serif:'Young Serif',Georgia,serif;--sans:'Plus Jakarta Sans',system-ui,sans-serif}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--mist);color:var(--ink);font:15px/1.5 var(--sans)}
+[hidden]{display:none!important}
+h1,h2,h3{font-family:var(--serif);font-weight:400;margin:0;color:var(--navy)}
+.wrap{max-width:1000px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header{background:var(--navy);color:#fff;padding-top:env(safe-area-inset-top,0px)}
+header .wrap{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;padding-block:14px}
+header h1{color:#fff;font-size:20px}
+header small{display:block;color:#BFCDE0;font-size:12px}
+.tabs{display:flex;gap:4px;margin-left:auto;overflow-x:auto;max-width:100%}
+.tab{background:none;border:0;color:#C9D6E6;font:600 14px var(--sans);padding:8px 14px;border-radius:999px;cursor:pointer;white-space:nowrap}
+.tab[aria-selected="true"]{background:#fff;color:var(--navy)}
+main .wrap{padding-block:24px 64px;display:flex;flex-direction:column;gap:16px}
+.panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media(max-width:600px){.row{grid-template-columns:minmax(0,1fr)}}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:600;min-width:0}
+label.f input,label.f select,label.f textarea{border:1px solid var(--line);border-radius:10px;padding:9px 11px;font:15px var(--sans);background:#fff;width:100%}
+.hint{color:var(--muted);font-size:12.5px;font-weight:400}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:40px;padding:0 16px;border-radius:999px;font:600 14px var(--sans);border:1px solid var(--line);background:#fff;cursor:pointer;text-decoration:none;color:var(--ink)}
+.btn.primary{background:var(--coral);border-color:var(--coral);color:#fff}
+.btn.navy{background:var(--navy);border-color:var(--navy);color:#fff}
+.btn.danger{color:var(--bad)}
+.btn.sm{min-height:32px;padding:0 12px;font-size:13px}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.check{display:flex;gap:8px;align-items:center;font-weight:600;font-size:14px}
+.photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
+.ph{border:1px solid var(--line);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px;background:var(--mist)}
+.ph img{width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:8px;background:#fff}
+.ph.contain img{object-fit:contain}
+.ph b{font-size:14px}
+.list{display:flex;flex-direction:column}
+.item{display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.item:last-child{border-bottom:0}
+.item img,.item .noimg{width:72px;height:54px;object-fit:cover;border-radius:8px;background:#E3EAF3}
+.item .t{font-weight:700}
+.item .s{color:var(--muted);font-size:13px}
+@media(max-width:600px){.item{grid-template-columns:56px minmax(0,1fr)}.item>div:last-child{grid-column:1/-1}.item img,.item .noimg{width:56px;height:42px}}
+.pill{display:inline-block;font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;background:var(--mist);color:var(--muted)}
+.pill.on{background:var(--good-bg);color:var(--good)}
+.pill.new{background:#FDEBE6;color:var(--coral-dark)}
+.overlay{position:fixed;inset:0;background:rgba(15,25,40,.55);display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:24px 16px;z-index:50}
+.modal{background:#fff;border-radius:16px;padding:20px;width:100%;max-width:640px;display:flex;flex-direction:column;gap:12px}
+.modal header{background:none;color:var(--ink);display:flex;justify-content:space-between;align-items:center;padding:0}
+.x{border:0;background:var(--mist);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:18px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 16px;border-radius:10px;font-weight:600;z-index:60;max-width:calc(100% - 32px)}
+.login{max-width:380px;margin:48px auto}
+.confirm{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--bad-bg);padding:8px 10px;border-radius:10px;font-size:14px}
+.empty{color:var(--muted);padding:12px 0}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+<header><div class="wrap">
+  <div><h1>Website Admin</h1><small>Welcome Home-Rizal PH · <a href="./" target="_blank" rel="noopener" style="color:#F3B8A9">View website ↗</a></small></div>
+  <nav class="tabs" id="tabs" hidden>
+    <button class="tab" data-v="profile">Profile</button>
+    <button class="tab" data-v="photos">Photos & BIR badge</button>
+    <button class="tab" data-v="listings">Listings</button>
+    <button class="tab" data-v="leads">Inquiries</button>
+    <button class="tab" data-v="signout">Sign out</button>
+  </nav>
+</div></header>
+<main><div class="wrap" id="view"></div></main>
+<div id="modal-root"></div>
+
+<script>
+const sb=window.supabase.createClient("https://djffchbmdvclzcfvoyhi.supabase.co","sb_publishable__zMWLW4AsgYkDMFJGZH_Sg_2apYlo-i");
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const peso=n=>"₱"+Number(n||0).toLocaleString("en-PH");
+const TYPES=["House & Lot","Condo","Lot / Land"];
+const DEF={brand:"Welcome Home-Rizal PH",name:"Anjeleen Pateña",title:"Real Estate Salesperson",realty:"Aeroestate Realty Corp",showAccreditation:false,accreditationNumber:"",accreditationPendingText:"Accreditation transfer in process",yearsInSales:"15+",familiesHelped:"",messenger:"",viber:"",whatsapp:"https://wa.me/639338552646",calendly:"",phone:"0933-855-2646",photoHero:"",photoFormal:"",photoLaptop:"",logo:"",birBadge:"",reviews:[{text:"",who:""},{text:"",who:""}]};
+const SLOTS=[["photoHero","Top section photo","assets/hero.jpg"],["photoFormal","“Why families work with me” photo","assets/formal.jpg"],["photoLaptop","OFW section photo","assets/laptop.jpg"],["logo","Realty logo (small, in header)","assets/aeroestate-logo.png"],["birBadge","BIR Registration Seal Badge",""]];
+let SITE={...DEF}, LIST=[], LEADS=[], view="profile", confirmId=null;
+
+function toast(t){const d=document.createElement("div");d.className="toast";d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),2600);}
+function closeModal(){$("#modal-root").innerHTML="";}
+
+/* ---------- Auth ---------- */
+function showLogin(msg){
+  $("#tabs").hidden=true;
+  $("#view").innerHTML=`<form class="panel login" id="f-login"><h2>Sign in</h2>
+    <p class="hint" style="margin:0">Use the same email and password as your CRM.</p>
+    <label class="f">Email<input id="l-email" name="email" type="email" required autocomplete="username"></label>
+    <label class="f">Password<input id="l-pass" name="password" type="password" required autocomplete="current-password"></label>
+    ${msg?`<p class="hint" style="color:var(--bad);margin:0">${esc(msg)}</p>`:""}
+    <button class="btn navy" type="submit">Sign in</button>
+    <button class="btn" type="button" data-act="forgot">Forgot password?</button></form>`;
+}
+async function start(){
+  const {data:site,error}=await sb.from("re_site").select("owner,data").eq("id",1).maybeSingle();
+  const {data:{user}}=await sb.auth.getUser();
+  if(error||!site||site.owner!==user.id){ $("#view").innerHTML=`<div class="panel"><h2>No access</h2><p>This account (${esc(user.email)}) is not the website owner.</p><button class="btn" data-act="signout">Sign out</button></div>`; return; }
+  SITE={...DEF,...(site.data||{})}; if(!Array.isArray(SITE.reviews)||SITE.reviews.length<2) SITE.reviews=[...(SITE.reviews||[]),{text:"",who:""},{text:"",who:""}].slice(0,2);
+  $("#tabs").hidden=false;
+  await loadList(); await loadLeads(); render();
+}
+async function loadList(){ const {data}=await sb.from("re_listings").select("*").order("sort").order("created_at",{ascending:false}); LIST=data||[]; }
+async function loadLeads(){ const {data}=await sb.from("re_leads").select("*").order("created_at",{ascending:false}).limit(300); LEADS=data||[]; }
+async function saveSite(){ const {error}=await sb.from("re_site").update({data:SITE,updated_at:new Date().toISOString()}).eq("id",1); if(error){toast("Not saved: "+error.message);return false;} toast("Saved. Your website is updated."); return true; }
+
+/* ---------- Views ---------- */
+function render(){
+  document.querySelectorAll(".tab").forEach(t=>t.setAttribute("aria-selected",t.dataset.v===view));
+  $("#view").innerHTML = view==="photos"?vPhotos(): view==="listings"?vListings(): view==="leads"?vLeads(): vProfile();
+}
+function vProfile(){
+  const s=SITE, f=(k,l,ph="",type="text")=>`<label class="f">${l}<input id="p-${k}" name="${k}" type="${type}" value="${esc(s[k])}" placeholder="${esc(ph)}"></label>`;
+  return `<form class="panel" id="f-profile"><h2>Profile</h2>
+    <div class="row">${f("brand","Brand / page name")}${f("name","Your name")}</div>
+    <div class="row">${f("title","Title")}${f("realty","Realty / broker")}</div>
+    <h3 style="font-size:18px">Accreditation</h3>
+    <label class="check"><input type="checkbox" id="p-show" name="showAccreditation" ${s.showAccreditation?"checked":""}> Show my PRC/DHSUD accreditation number</label>
+    <div class="row">${f("accreditationNumber","Accreditation no.")}${f("accreditationPendingText","Text to show while hidden","Accreditation transfer in process")}</div>
+    <h3 style="font-size:18px">Numbers</h3>
+    <div class="row">${f("yearsInSales","Years in sales","15+")}${f("familiesHelped","Families helped","Leave blank to hide")}</div>
+    <h3 style="font-size:18px">Contact links</h3>
+    <div class="row">${f("messenger","Messenger link","https://m.me/yourpage","url")}${f("viber","Viber link","viber://chat?number=%2B639…")}</div>
+    <div class="row">${f("whatsapp","WhatsApp link","https://wa.me/639…","url")}${f("calendly","Calendly link","https://calendly.com/…","url")}</div>
+    <div class="row">${f("phone","Mobile number shown on site")}</div>
+    <p class="hint" style="margin:0">A blank link hides that button on the website.</p>
+    <h3 style="font-size:18px">Client reviews</h3>
+    ${s.reviews.map((r,i)=>`<div class="row"><label class="f">Review ${i+1}<textarea id="p-rv${i}" name="rv${i}" rows="2" placeholder="Short review from a real buyer">${esc(r.text)}</textarea></label><label class="f">Client name, property<input id="p-rw${i}" name="rw${i}" value="${esc(r.who)}"></label></div>`).join("")}
+    <p class="hint" style="margin:0">Use real reviews only, with the client's permission. Blank reviews are hidden.</p>
+    <div class="actions"><button class="btn primary" type="submit">Save profile</button></div></form>`;
+}
+function vPhotos(){
+  return `<div class="panel"><h2>Photos & BIR badge</h2><p class="hint" style="margin:0">JPG, PNG or WebP, up to 8 MB. Upload the BIR Seal Badge exactly as downloaded from ORUS (badge only, uncropped QR code).</p>
+    <div class="photos">${SLOTS.map(([k,l,def])=>{const url=SITE[k]||def;return `<div class="ph ${k==="logo"||k==="birBadge"?"contain":""}"><b>${l}</b>${url?`<img src="${esc(url)}" alt="">`:`<div style="aspect-ratio:4/5;display:grid;place-items:center;background:#fff;border-radius:8px;color:var(--muted);font-size:13px">Not uploaded</div>`}
+      <label class="btn sm navy" for="up-${k}">Upload new</label><input type="file" id="up-${k}" data-slot="${k}" accept="image/jpeg,image/png,image/webp" hidden>
+      ${SITE[k]?`<button class="btn sm danger" data-act="reset-photo" data-k="${k}">${def?"Use default":"Remove"}</button>`:""}</div>`}).join("")}</div></div>`;
+}
+function vListings(){
+  return `<div class="panel"><div class="actions" style="justify-content:space-between;align-items:center"><h2>Listings</h2><button class="btn primary" data-act="add-listing">+ Add listing</button></div>
+    <div class="list">${LIST.map(l=>`<div class="item">${l.img?`<img src="${esc(l.img)}" alt="">`:`<div class="noimg"></div>`}
+      <div style="min-width:0"><div class="t">${esc(l.title)}</div><div class="s">${esc(l.type)} · ${l.mode==="Rent"?"For rent":"For sale"} · ${esc(l.location)}</div><div class="s"><b>${peso(l.price)}</b>${l.mode==="Rent"?"/mo":""} · ${esc(l.monthly)}</div></div>
+      <div class="actions">${confirmId===l.id?`<span class="confirm">Delete? <button class="btn sm danger" data-act="del-yes" data-id="${l.id}">Delete</button><button class="btn sm" data-act="cancel">Cancel</button></span>`:
+        `<span class="pill ${l.active?"on":""}">${l.active?"Shown":"Hidden"}</span><button class="btn sm" data-act="toggle" data-id="${l.id}">${l.active?"Hide":"Show"}</button><button class="btn sm" data-act="edit" data-id="${l.id}">Edit</button><button class="btn sm danger" data-act="del" data-id="${l.id}">Delete</button>`}</div></div>`).join("")||`<p class="empty">No listings yet. Tap “+ Add listing” to post your first property.</p>`}</div></div>`;
+}
+function vLeads(){
+  return `<div class="panel"><h2>Inquiries</h2><p class="hint" style="margin:0">Callback requests from your website form, newest first.</p>
+    <div class="list">${LEADS.map(l=>`<div class="item" style="grid-template-columns:minmax(0,1fr) auto">
+      <div style="min-width:0"><div class="t">${esc(l.name)} <span class="pill ${l.status==="New"?"new":l.status==="Contacted"?"on":""}">${esc(l.status)}</span></div>
+      <div class="s"><a href="tel:${esc(l.phone.replace(/[^\d+]/g,""))}">${esc(l.phone)}</a> · ${esc(l.interest)} · ${new Date(l.created_at).toLocaleString("en-PH",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}</div>
+      ${l.message?`<div class="s" style="color:var(--ink)">“${esc(l.message)}”</div>`:""}</div>
+      <div class="actions">${["New","Contacted","Closed"].filter(x=>x!==l.status).map(x=>`<button class="btn sm" data-act="lead-status" data-id="${l.id}" data-s="${x}">Mark ${x.toLowerCase()}</button>`).join("")}
+      ${confirmId===l.id?`<button class="btn sm danger" data-act="lead-del-yes" data-id="${l.id}">Confirm delete</button>`:`<button class="btn sm danger" data-act="lead-del" data-id="${l.id}">Delete</button>`}</div></div>`).join("")||`<p class="empty">No inquiries yet.</p>`}</div></div>`;
+}
+function openListing(id){
+  const l=id?LIST.find(x=>x.id===id):{title:"",type:"House & Lot",mode:"Sale",location:"",price:"",monthly:"",meta:"",img:"",active:true,sort:0};
+  $("#modal-root").innerHTML=`<div class="overlay" data-act="close-bg"><form class="modal" id="f-listing" data-id="${id||""}">
+    <header><h2>${id?"Edit listing":"Add listing"}</h2><button type="button" class="x" data-act="close" aria-label="Close">×</button></header>
+    <label class="f">Title<input id="m-title" name="title" required value="${esc(l.title)}" placeholder="2-storey townhouse, end unit"></label>
+    <div class="row"><label class="f">Property type<select id="m-type" name="type">${TYPES.map(t=>`<option ${t===l.type?"selected":""}>${t}</option>`).join("")}</select></label>
+    <label class="f">For<select id="m-mode" name="mode"><option value="Sale" ${l.mode==="Sale"?"selected":""}>Sale</option><option value="Rent" ${l.mode==="Rent"?"selected":""}>Rent</option></select></label></div>
+    <div class="row"><label class="f">Location<input id="m-loc" name="location" required value="${esc(l.location)}" placeholder="Binangonan, Rizal"></label>
+    <label class="f">Price (TCP, or monthly rent)<input id="m-price" name="price" type="number" min="0" required value="${esc(l.price)}"></label></div>
+    <label class="f">Payment line<input id="m-monthly" name="monthly" value="${esc(l.monthly)}" placeholder="DP ₱3,000/month · Pag-IBIG ₱4,900/month"></label>
+    <label class="f">Details<input id="m-meta" name="meta" value="${esc(l.meta)}" placeholder="2 bedrooms, 1 bath, 36 sqm floor"></label>
+    <div class="row"><label class="f">Photo<input id="m-img" name="imgfile" type="file" accept="image/jpeg,image/png,image/webp"><span class="hint">${l.img?"Leave empty to keep the current photo":"Optional"}</span></label>
+    <label class="f">Order (lower shows first)<input id="m-sort" name="sort" type="number" value="${esc(l.sort)}"></label></div>
+    <label class="check"><input type="checkbox" id="m-active" name="active" ${l.active?"checked":""}> Show on website</label>
+    <div class="actions"><button type="button" class="btn" data-act="close">Cancel</button><button class="btn primary" type="submit" id="m-save">Save listing</button></div></form></div>`;
+  $("#m-title").focus();
+}
+async function upload(file,folder){
+  if(file.size>8*1024*1024){ toast("Photo is over 8 MB"); return null; }
+  const ext=(file.name.split(".").pop()||"jpg").toLowerCase().replace(/[^a-z0-9]/g,"");
+  const path=`${folder}/${Date.now()}-${Math.random().toString(36).slice(2,7)}.${ext}`;
+  const {error}=await sb.storage.from("re-site").upload(path,file,{contentType:file.type,upsert:false,cacheControl:"31536000"});
+  if(error){ toast("Upload failed: "+error.message); return null; }
+  return sb.storage.from("re-site").getPublicUrl(path).data.publicUrl;
+}
+
+/* ---------- Events ---------- */
+document.addEventListener("submit",async e=>{
+  e.preventDefault(); const f=e.target, fd=new FormData(f);
+  if(f.id==="f-login"){ const {error}=await sb.auth.signInWithPassword({email:fd.get("email").trim(),password:fd.get("password")}); if(error) showLogin(error.message==="Invalid login credentials"?"Wrong email or password.":error.message); return; }
+  if(f.id==="f-profile"){
+    ["brand","name","title","realty","accreditationNumber","accreditationPendingText","yearsInSales","familiesHelped","messenger","viber","whatsapp","calendly","phone"].forEach(k=>SITE[k]=(fd.get(k)||"").trim());
+    SITE.showAccreditation=!!fd.get("showAccreditation");
+    SITE.reviews=[0,1].map(i=>({text:(fd.get("rv"+i)||"").trim(),who:(fd.get("rw"+i)||"").trim()}));
+    await saveSite(); return;
+  }
+  if(f.id==="f-listing"){
+    const btn=$("#m-save"); btn.disabled=true; btn.textContent="Saving…";
+    const id=f.dataset.id, file=fd.get("imgfile");
+    const row={title:fd.get("title").trim(),type:fd.get("type"),mode:fd.get("mode"),location:fd.get("location").trim(),price:+fd.get("price")||0,monthly:fd.get("monthly").trim(),meta:fd.get("meta").trim(),sort:+fd.get("sort")||0,active:!!fd.get("active")};
+    if(file&&file.size){ const url=await upload(file,"listings"); if(!url){btn.disabled=false;btn.textContent="Save listing";return;} row.img=url; }
+    const res=id?await sb.from("re_listings").update(row).eq("id",id):await sb.from("re_listings").insert(row);
+    if(res.error){ toast("Not saved: "+res.error.message); btn.disabled=false; btn.textContent="Save listing"; return; }
+    closeModal(); await loadList(); render(); toast("Listing saved. It's live on your website.");
+  }
+});
+document.addEventListener("change",async e=>{
+  const k=e.target.dataset&&e.target.dataset.slot; if(!k||!e.target.files[0]) return;
+  toast("Uploading…"); const url=await upload(e.target.files[0],"site"); if(!url) return;
+  SITE[k]=url; if(await saveSite()) render();
+});
+document.addEventListener("click",async e=>{
+  const t=e.target.closest("[data-act],.tab"); if(!t) return;
+  if(t.classList.contains("tab")){ if(t.dataset.v==="signout"){ await sb.auth.signOut(); location.reload(); return; } view=t.dataset.v; confirmId=null; render(); return; }
+  const a=t.dataset.act, id=t.dataset.id;
+  if(a==="close-bg"&&e.target!==t) return;
+  if(a==="close"||a==="close-bg") closeModal();
+  if(a==="forgot"){ const em=$("#l-email").value.trim(); if(!em){showLogin("Type your email first, then tap Forgot password.");return;} await sb.auth.resetPasswordForEmail(em,{redirectTo:location.href}); showLogin("Password reset link sent to your email."); }
+  if(a==="signout"){ await sb.auth.signOut(); location.reload(); }
+  if(a==="reset-photo"){ SITE[t.dataset.k]=""; if(await saveSite()) render(); }
+  if(a==="add-listing") openListing();
+  if(a==="edit") openListing(id);
+  if(a==="toggle"){ const l=LIST.find(x=>x.id===id); const {error}=await sb.from("re_listings").update({active:!l.active}).eq("id",id); if(error) toast(error.message); else { await loadList(); render(); } }
+  if(a==="del"||a==="lead-del"){ confirmId=id; render(); }
+  if(a==="cancel"){ confirmId=null; render(); }
+  if(a==="del-yes"){ const {error}=await sb.from("re_listings").delete().eq("id",id); confirmId=null; if(error) toast(error.message); else { await loadList(); toast("Listing deleted"); } render(); }
+  if(a==="lead-status"){ const {error}=await sb.from("re_leads").update({status:t.dataset.s}).eq("id",id); if(error) toast(error.message); else { await loadLeads(); render(); } }
+  if(a==="lead-del-yes"){ const {error}=await sb.from("re_leads").delete().eq("id",id); confirmId=null; if(error) toast(error.message); else { await loadLeads(); toast("Inquiry deleted"); } render(); }
+});
+
+let started=false;
+sb.auth.onAuthStateChange((ev,session)=>{ if(session&&!started){ started=true; start(); } });
+sb.auth.getSession().then(({data})=>{ if(!data.session) showLogin(); });
+</script>
+</body>
+</html>
