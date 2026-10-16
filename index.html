@@ -84,7 +84,8 @@ header{position:sticky;top:0;z-index:10;background:var(--white);border-bottom:1p
 .loc{font-size:14px;color:var(--muted)}
 .card .btn{margin-top:auto;min-height:44px;font-size:14px}
 .card-body .meta{font-size:13px;color:var(--muted);padding-bottom:10px}
-.owner{position:absolute;top:12px;right:12px;background:var(--coral);color:var(--white);font-size:12px;font-weight:700;padding:5px 10px;border-radius:999px;letter-spacing:.02em}
+.owner-wrap{position:absolute;top:12px;right:12px;display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.owner{background:var(--coral);color:var(--white);font-size:12px;font-weight:700;padding:5px 10px;border-radius:999px;letter-spacing:.02em}
 .thumb-btn{all:unset;display:block;width:100%;height:100%;cursor:zoom-in}
 .thumb-btn:focus-visible{outline:3px solid var(--coral);outline-offset:-3px}
 .slides{display:flex;width:100%;height:100%;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch}
@@ -417,7 +418,7 @@ function render(){
         '<span class="pcount" data-pc="'+i+'">1 / '+ph.length+'</span>'
       : img;
     return '<article class="card"><div class="thumb">'+photoArea+
-      '<span class="tag'+(l.mode==="Rent"?' rent':'')+'">'+esc(l.type)+(l.mode==="Rent"?' for rent':'')+'</span>'+(l.direct_owner?'<span class="owner">Direct to Owner</span>':'')+'</div>'+
+      '<span class="tag'+(l.mode==="Rent"?' rent':'')+'">'+esc(l.type)+(l.mode==="Rent"?' for rent':'')+'</span>'+((l.direct_owner||l.badge)?'<span class="owner-wrap">'+(l.direct_owner?'<span class="owner">Direct to Owner</span>':'')+(l.badge?'<span class="owner">'+esc(l.badge)+'</span>':'')+'</span>':'')+'</div>'+
       (multi?'<div class="strip" data-strip="'+i+'">'+ph.map(function(u,k){return '<button type="button" data-jump="'+i+'" data-at="'+k+'" aria-label="Show photo '+(k+1)+'"'+(k?'':' aria-current="true"')+'><img src="'+esc(u)+'" alt="" loading="lazy"></button>'}).join("")+'</div>':'')+
       '<div class="card-body"><div class="price">'+peso(l.price)+(l.mode==="Rent"?'<small style="font-size:15px">/month</small>':'')+'</div>'+
       '<div class="monthly">'+esc(l.monthly)+'</div><h3>'+esc(l.title)+'</h3><div class="loc">'+esc(l.location)+'</div><div class="meta">'+esc(l.meta)+'</div>'+
