@@ -112,6 +112,14 @@ header{position:sticky;top:0;z-index:10;background:var(--white);border-bottom:1p
 .lb button{min-width:44px;min-height:44px;border:0;border-radius:999px;background:var(--white);color:var(--navy);font:600 18px var(--sans);cursor:pointer}
 .lb .lb-x{position:absolute;top:14px;right:14px}
 .lb-title{color:var(--white);font-size:14px;margin-bottom:10px;text-align:center;max-width:90vw}
+.calc{border:1px solid var(--line);border-radius:12px;margin:0 0 12px;background:var(--mist)}
+.calc summary{padding:10px 14px;font-size:14px;font-weight:600;color:var(--navy);cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;min-height:44px}
+.calc summary::-webkit-details-marker{display:none}
+.calc table{width:100%;border-collapse:collapse;font-size:13.5px}
+.calc td{padding:7px 14px;border-top:1px solid var(--line);vertical-align:top}
+.calc td:last-child{text-align:right;font-weight:600;color:var(--ink);white-space:nowrap}
+.calc tr.hi td{background:var(--white);color:var(--coral-dark);font-size:15px}
+.calc .note{padding:8px 14px 12px;font-size:12px;color:var(--muted);border-top:1px solid var(--line)}
 .empty{grid-column:1/-1;background:var(--white);border:1px dashed var(--line);border-radius:16px;padding:32px;text-align:center;color:var(--muted)}
 
 .services{background:var(--white)}
@@ -405,7 +413,7 @@ function render(){
       (multi?'<div class="strip" data-strip="'+i+'">'+ph.map(function(u,k){return '<button type="button" data-jump="'+i+'" data-at="'+k+'" aria-label="Show photo '+(k+1)+'"'+(k?'':' aria-current="true"')+'><img src="'+esc(u)+'" alt="" loading="lazy"></button>'}).join("")+'</div>':'')+
       '<div class="card-body"><div class="price">'+peso(l.price)+(l.mode==="Rent"?'<small style="font-size:15px">/month</small>':'')+'</div>'+
       '<div class="monthly">'+esc(l.monthly)+'</div><h3>'+esc(l.title)+'</h3><div class="loc">'+esc(l.location)+'</div><div class="meta">'+esc(l.meta)+'</div>'+
-      (perks.length?'<ul class="perks">'+perks.map(function(x){return '<li>'+esc(x)+'</li>'}).join("")+'</ul>':'')+
+      calcBox(l.calc)+(perks.length?'<ul class="perks">'+perks.map(function(x){return '<li>'+esc(x)+'</li>'}).join("")+'</ul>':'')+
       '<a class="btn btn-coral" '+(CONFIG.calendly?'target="_blank" rel="noopener" ':'data-ask="'+esc(l.title)+'" ')+'href="'+esc(viewHref)+'">Schedule a viewing</a></div></article>';
   }).join("");
 }
@@ -417,6 +425,15 @@ document.querySelectorAll(".toggle button").forEach(function(btn){
     fillBudget(); render();
   });
 });
+function calcBox(txt){
+  var rows=String(txt||"").split(/\n+/).map(function(x){return x.trim()}).filter(Boolean); if(!rows.length) return "";
+  var note="", body=rows.map(function(r){
+    if(/^note:/i.test(r)){ note=r.replace(/^note:\s*/i,""); return ""; }
+    var hi=r.charAt(0)==="*"; if(hi) r=r.slice(1).trim();
+    var p=r.split("|"); return '<tr'+(hi?' class="hi"':'')+'><td>'+esc(p[0].trim())+'</td><td>'+esc((p[1]||"").trim())+'</td></tr>';
+  }).join("");
+  return '<details class="calc"><summary>Sample computation</summary><table>'+body+'</table>'+(note?'<div class="note">'+esc(note)+'</div>':'')+'</details>';
+}
 function gallery(l){ var p=Array.isArray(l.photos)?l.photos.filter(Boolean):[]; if(l.img && p.indexOf(l.img)<0) p.unshift(l.img); return p; }
 var SHOWN=[], LB={p:[],i:0,last:null};
 function lbShow(){ $("#lbImg").src=LB.p[LB.i]; $("#lbImg").alt=LB.t+" — photo "+(LB.i+1); $("#lbCount").textContent=(LB.i+1)+" / "+LB.p.length; }
