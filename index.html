@@ -244,7 +244,7 @@ footer a{color:#BFCDE0}
         <select id="fType"><option value="">All types</option><option>House &amp; Lot</option><option>Condo</option><option>Lot / Land</option></select></div>
       <div class="field"><label for="fLoc">Location</label><select id="fLoc"><option value="">All locations</option></select></div>
       <div class="field"><label for="fBudget">Budget</label><select id="fBudget"></select></div>
-      <div class="field"><label for="fSource">Listing</label><select id="fSource"><option value="">All listings</option><option value="owner">Direct to Owner</option><option value="4ph">4PH Pag-IBIG Program</option></select></div>
+      <div class="field"><label for="fSource">Listing</label><select id="fSource"><option value="">All listings</option><option value="owner">Direct to Owner</option><option value="4ph">4PH Pag-IBIG Program</option><option value="pre">Pre-Selling</option><option value="rfo">Ready for Occupancy</option></select></div>
     </div>
     <p class="count" id="count" aria-live="polite">Loading listings…</p>
     <div class="grid" id="grid"></div>
@@ -400,7 +400,7 @@ function fillBudget(){ $("#fBudget").innerHTML = BUDGETS[mode].map(function(b){r
 function render(){
   var t=$("#fType").value, loc=$("#fLoc").value, b=$("#fBudget").value, src=$("#fSource").value;
   var min=0,max=Infinity; if(b){var p=b.split("-");min=+p[0];max=+p[1]}
-  var list = LISTINGS.filter(function(l){return l.mode===mode && (!t||l.type===t) && (!loc||l.location===loc) && +l.price>=min && +l.price<=max && (!src||(src==='owner'&&l.direct_owner)||(src==='4ph'&&/4PH/i.test(l.badge||'')))});
+  var list = LISTINGS.filter(function(l){return l.mode===mode && (!t||l.type===t) && (!loc||l.location===loc) && +l.price>=min && +l.price<=max && (!src||(src==='owner'&&l.direct_owner)||(src==='4ph'&&/4PH/i.test(l.badge||''))||(src==='pre'&&l.status==='Pre-Selling')||(src==='rfo'&&l.status==='Ready for Occupancy'))});
   $("#count").textContent = list.length + (list.length===1?" property":" properties") + (mode==="Sale"?" for sale":" for rent");
   if(!list.length){
     $("#grid").innerHTML = '<div class="empty">No match yet. Tell me what you need, and I\'ll find it for you.<br><br><a class="btn btn-navy" href="#contact">Message me</a></div>';

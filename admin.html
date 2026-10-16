@@ -160,7 +160,7 @@ function vLeads(){
       ${confirmId===l.id?`<button class="btn sm danger" data-act="lead-del-yes" data-id="${l.id}">Confirm delete</button>`:`<button class="btn sm danger" data-act="lead-del" data-id="${l.id}">Delete</button>`}</div></div>`).join("")||`<p class="empty">No inquiries yet.</p>`}</div></div>`;
 }
 function openListing(id){
-  const l=id?LIST.find(x=>x.id===id):{title:"",type:"House & Lot",mode:"Sale",location:"",price:"",monthly:"",meta:"",img:"",active:true,sort:0,direct_owner:false,perks:"",calc:"",reqs:"",badge:""};
+  const l=id?LIST.find(x=>x.id===id):{title:"",type:"House & Lot",mode:"Sale",location:"",price:"",monthly:"",meta:"",img:"",active:true,sort:0,direct_owner:false,perks:"",calc:"",reqs:"",badge:"",status:""};
   $("#modal-root").innerHTML=`<div class="overlay" data-act="close-bg"><form class="modal" id="f-listing" data-id="${id||""}">
     <header><h2>${id?"Edit listing":"Add listing"}</h2><button type="button" class="x" data-act="close" aria-label="Close">×</button></header>
     <label class="f">Title<input id="m-title" name="title" required value="${esc(l.title)}" placeholder="2-storey townhouse, end unit"></label>
@@ -175,6 +175,7 @@ function openListing(id){
     <label class="f">Highlights (one per line)<textarea id="m-perks" name="perks" rows="4" placeholder="Free transfer of title assistance&#10;Preferred cash only">${esc(l.perks||"")}</textarea></label>
     <label class="f">Sample computation (one row per line: Label | Amount. Start with * to highlight. ## starts a section, e.g. ## In-House Financing. A line starting with Note: shows as fine print)<textarea id="m-calc" name="calc" rows="5" placeholder="Total Contract Price | ₱2,000,000&#10;*Monthly amortization | ₱13,000&#10;Note: Subject to Pag-IBIG approval">${esc(l.calc||"")}</textarea></label>
     <label class="f">Requirements (## starts a group, e.g. ## OFW. One item per line. Start a line with - for a sub-item. Step: lines show as numbered steps on top)<textarea id="m-reqs" name="reqs" rows="6" placeholder="Step: Complete requirements for unit line-up&#10;## Locally Employed&#10;Latest 1-month payslip&#10;## OFW&#10;Latest complete job contract">${esc(l.reqs||"")}</textarea></label>
+    <label class="f">Status<select id="m-status" name="status">${["","Pre-Selling","Ready for Occupancy"].map(v=>`<option value="${v}" ${(l.status||"")===v?"selected":""}>${v||"Not set"}</option>`).join("")}</select></label>
     <label class="f">Badge on photo (optional)<input id="m-badge" name="badge" value="${esc(l.badge||"")}" placeholder="Pre-Selling Duplex"></label>
     <label class="check"><input type="checkbox" id="m-owner" name="direct_owner" ${l.direct_owner?"checked":""}> Direct to Owner listing</label>
     <label class="check"><input type="checkbox" id="m-active" name="active" ${l.active?"checked":""}> Show on website</label>
@@ -203,7 +204,7 @@ document.addEventListener("submit",async e=>{
   if(f.id==="f-listing"){
     const btn=$("#m-save"); btn.disabled=true; btn.textContent="Saving…";
     const id=f.dataset.id, file=fd.get("imgfile");
-    const row={title:fd.get("title").trim(),type:fd.get("type"),mode:fd.get("mode"),location:fd.get("location").trim(),price:+fd.get("price")||0,monthly:fd.get("monthly").trim(),meta:fd.get("meta").trim(),sort:+fd.get("sort")||0,active:!!fd.get("active"),direct_owner:!!fd.get("direct_owner"),perks:(fd.get("perks")||"").trim(),calc:(fd.get("calc")||"").trim(),reqs:(fd.get("reqs")||"").trim(),badge:(fd.get("badge")||"").trim()};
+    const row={title:fd.get("title").trim(),type:fd.get("type"),mode:fd.get("mode"),location:fd.get("location").trim(),price:+fd.get("price")||0,monthly:fd.get("monthly").trim(),meta:fd.get("meta").trim(),sort:+fd.get("sort")||0,active:!!fd.get("active"),direct_owner:!!fd.get("direct_owner"),perks:(fd.get("perks")||"").trim(),calc:(fd.get("calc")||"").trim(),reqs:(fd.get("reqs")||"").trim(),badge:(fd.get("badge")||"").trim(),status:fd.get("status")||""};
     if(file&&file.size){ const url=await upload(file,"listings"); if(!url){btn.disabled=false;btn.textContent="Save listing";return;} row.img=url; }
     const res=id?await sb.from("re_listings").update(row).eq("id",id):await sb.from("re_listings").insert(row);
     if(res.error){ toast("Not saved: "+res.error.message); btn.disabled=false; btn.textContent="Save listing"; return; }
