@@ -120,6 +120,14 @@ header{position:sticky;top:0;z-index:10;background:var(--white);border-bottom:1p
 .calc td:last-child{text-align:right;font-weight:600;color:var(--ink);white-space:nowrap}
 .calc tr.hi td{background:var(--white);color:var(--coral-dark);font-size:15px}
 .calc .note{padding:8px 14px 12px;font-size:12px;color:var(--muted);border-top:1px solid var(--line)}
+.reqs .steps-mini{margin:0;padding:10px 14px 4px 34px;font-size:13px;color:var(--ink);border-top:1px solid var(--line)}
+.reqs .steps-mini li{margin-bottom:6px}
+.reqs .pick{padding:8px 14px 4px;border-top:1px solid var(--line)}
+.reqs .pick label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:4px}
+.reqs .pick select{width:100%;min-height:44px;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font:15px var(--sans);color:var(--ink);background:var(--white)}
+.reqs ol.rl{margin:0;padding:8px 14px 12px 34px;font-size:13.5px;color:var(--ink)}
+.reqs ol.rl>li{margin-bottom:6px}
+.reqs ol.rl ul{margin:4px 0 0;padding-left:18px;color:var(--muted);font-size:13px}
 .empty{grid-column:1/-1;background:var(--white);border:1px dashed var(--line);border-radius:16px;padding:32px;text-align:center;color:var(--muted)}
 
 .services{background:var(--white)}
@@ -413,7 +421,7 @@ function render(){
       (multi?'<div class="strip" data-strip="'+i+'">'+ph.map(function(u,k){return '<button type="button" data-jump="'+i+'" data-at="'+k+'" aria-label="Show photo '+(k+1)+'"'+(k?'':' aria-current="true"')+'><img src="'+esc(u)+'" alt="" loading="lazy"></button>'}).join("")+'</div>':'')+
       '<div class="card-body"><div class="price">'+peso(l.price)+(l.mode==="Rent"?'<small style="font-size:15px">/month</small>':'')+'</div>'+
       '<div class="monthly">'+esc(l.monthly)+'</div><h3>'+esc(l.title)+'</h3><div class="loc">'+esc(l.location)+'</div><div class="meta">'+esc(l.meta)+'</div>'+
-      calcBox(l.calc)+(perks.length?'<ul class="perks">'+perks.map(function(x){return '<li>'+esc(x)+'</li>'}).join("")+'</ul>':'')+
+      calcBox(l.calc)+reqBox(l.reqs,i)+(perks.length?'<ul class="perks">'+perks.map(function(x){return '<li>'+esc(x)+'</li>'}).join("")+'</ul>':'')+
       '<a class="btn btn-coral" '+(CONFIG.calendly?'target="_blank" rel="noopener" ':'data-ask="'+esc(l.title)+'" ')+'href="'+esc(viewHref)+'">Schedule a viewing</a></div></article>';
   }).join("");
 }
@@ -434,6 +442,22 @@ function calcBox(txt){
   }).join("");
   return '<details class="calc"><summary>Sample computation</summary><table>'+body+'</table>'+(note?'<div class="note">'+esc(note)+'</div>':'')+'</details>';
 }
+function reqBox(txt,i){
+  var lines=String(txt||"").split(/\n/); var groups=[], steps=[], g=null;
+  lines.forEach(function(raw){ var t=raw.trim(); if(!t) return;
+    if(/^step:/i.test(t)){ steps.push(t.replace(/^step:\s*/i,"")); return; }
+    if(t.slice(0,2)==="##"){ g={name:t.replace(/^#+\s*/,""),items:[]}; groups.push(g); return; }
+    if(!g) return;
+    if(t.charAt(0)==="-"){ var last=g.items[g.items.length-1]; if(last) last.sub.push(t.replace(/^-\s*/,"")); return; }
+    g.items.push({text:t,sub:[]});
+  });
+  if(!groups.length) return "";
+  var lists=groups.map(function(gr,k){ return '<ol class="rl" data-rg="'+i+'" data-k="'+k+'"'+(k?' hidden':'')+'>'+gr.items.map(function(it){return '<li>'+esc(it.text)+(it.sub.length?'<ul>'+it.sub.map(function(x){return '<li>'+esc(x)+'</li>'}).join("")+'</ul>':'')+'</li>'}).join("")+'</ol>'; }).join("");
+  return '<details class="calc reqs"><summary>List of requirements</summary>'+
+    (steps.length?'<ol class="steps-mini">'+steps.map(function(x){return '<li>'+esc(x)+'</li>'}).join("")+'</ol>':'')+
+    '<div class="pick"><label for="rq'+i+'">Your source of income</label><select id="rq'+i+'" data-rsel="'+i+'">'+groups.map(function(gr,k){return '<option value="'+k+'">'+esc(gr.name)+'</option>'}).join("")+'</select></div>'+lists+'</details>';
+}
+document.addEventListener("change",function(e){ var s=e.target.closest("[data-rsel]"); if(!s) return; document.querySelectorAll('[data-rg="'+s.dataset.rsel+'"]').forEach(function(o){ o.hidden = o.dataset.k!==s.value; }); });
 function gallery(l){ var p=Array.isArray(l.photos)?l.photos.filter(Boolean):[]; if(l.img && p.indexOf(l.img)<0) p.unshift(l.img); return p; }
 var SHOWN=[], LB={p:[],i:0,last:null};
 function lbShow(){ $("#lbImg").src=LB.p[LB.i]; $("#lbImg").alt=LB.t+" — photo "+(LB.i+1); $("#lbCount").textContent=(LB.i+1)+" / "+LB.p.length; }
