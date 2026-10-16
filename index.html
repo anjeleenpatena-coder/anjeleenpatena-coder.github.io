@@ -85,6 +85,7 @@ header{position:sticky;top:0;z-index:10;background:var(--white);border-bottom:1p
 .card .btn{margin-top:auto;min-height:44px;font-size:14px}
 .card-body .meta{font-size:13px;color:var(--muted);padding-bottom:10px}
 .owner-wrap{position:absolute;top:12px;right:12px;display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.owner.sold{background:var(--navy-deep)}
 .owner{background:var(--coral);color:var(--white);font-size:12px;font-weight:700;padding:5px 10px;border-radius:999px;letter-spacing:.02em}
 .thumb-btn{all:unset;display:block;width:100%;height:100%;cursor:zoom-in}
 .thumb-btn:focus-visible{outline:3px solid var(--coral);outline-offset:-3px}
@@ -419,12 +420,13 @@ function render(){
         '<span class="pcount" data-pc="'+i+'">1 / '+ph.length+'</span>'
       : img;
     return '<article class="card"><div class="thumb">'+photoArea+
-      '<span class="tag'+(l.mode==="Rent"?' rent':'')+'">'+esc(l.type)+(l.mode==="Rent"?' for rent':'')+'</span>'+((l.direct_owner||l.badge)?'<span class="owner-wrap">'+(l.direct_owner?'<span class="owner">Direct to Owner</span>':'')+(l.badge?'<span class="owner">'+esc(l.badge)+'</span>':'')+'</span>':'')+'</div>'+
+      '<span class="tag'+(l.mode==="Rent"?' rent':'')+'">'+esc(l.type)+(l.mode==="Rent"?' for rent':'')+'</span>'+((l.direct_owner||l.badge)?'<span class="owner-wrap">'+(l.direct_owner?'<span class="owner">Direct to Owner</span>':'')+String(l.badge||'').split('|').map(function(b){b=b.trim();return b?'<span class="owner'+(/sold out/i.test(b)?' sold':'')+'">'+esc(b)+'</span>':''}).join('')+'</span>':'')+'</div>'+
       (multi?'<div class="strip" data-strip="'+i+'">'+ph.map(function(u,k){return '<button type="button" data-jump="'+i+'" data-at="'+k+'" aria-label="Show photo '+(k+1)+'"'+(k?'':' aria-current="true"')+'><img src="'+esc(u)+'" alt="" loading="lazy"></button>'}).join("")+'</div>':'')+
       '<div class="card-body"><div class="price">'+peso(l.price)+(l.mode==="Rent"?'<small style="font-size:15px">/month</small>':'')+'</div>'+
       '<div class="monthly">'+esc(l.monthly)+'</div><h3>'+esc(l.title)+'</h3><div class="loc">'+esc(l.location)+'</div><div class="meta">'+esc(l.meta)+'</div>'+
       calcBox(l.calc,i)+reqBox(l.reqs,i)+(perks.length?'<ul class="perks">'+perks.map(function(x){return '<li>'+esc(x)+'</li>'}).join("")+'</ul>':'')+
-      '<a class="btn btn-coral" '+(CONFIG.calendly?'target="_blank" rel="noopener" ':'data-ask="'+esc(l.title)+'" ')+'href="'+esc(viewHref)+'">Schedule a viewing</a></div></article>';
+      (/sold out/i.test(l.badge||'')?'<a class="btn btn-navy" data-wait="'+esc(l.title)+'" href="#contact">Notify me when it re-opens</a></div></article>':
+      '<a class="btn btn-coral" '+(CONFIG.calendly?'target="_blank" rel="noopener" ':'data-ask="'+esc(l.title)+'" ')+'href="'+esc(viewHref)+'">Schedule a viewing</a></div></article>');
   }).join("");
 }
 
@@ -499,6 +501,7 @@ document.addEventListener("click",function(e){
 ["#fType","#fLoc","#fBudget","#fSource"].forEach(function(s){$(s).addEventListener("change",render)});
 document.addEventListener("click",function(e){
   var a=e.target.closest("[data-interest]"); if(a) $("#lInterest").value="Sell my property";
+  var w=e.target.closest("[data-wait]"); if(w){ $("#lInterest").value="Buy a property"; $("#lMsg").value="Please notify me when inventory re-opens for: "+w.dataset.wait; }
   var v=e.target.closest("[data-ask]"); if(v){ $("#lInterest").value="Buy a property"; $("#lMsg").value="I'd like to schedule a viewing for: "+v.dataset.ask; }
 });
 
