@@ -119,6 +119,7 @@ header{position:sticky;top:0;z-index:10;background:var(--white);border-bottom:1p
 .calc table{width:100%;border-collapse:collapse;font-size:13.5px}
 .calc td{padding:7px 14px;border-top:1px solid var(--line);vertical-align:top}
 .calc td:last-child{text-align:right;font-weight:600;color:var(--ink);white-space:nowrap}
+.calc tr.sec td{background:var(--navy);color:var(--white);font-weight:700;text-align:left;font-size:13px;letter-spacing:.02em}
 .calc tr.hi td{background:var(--white);color:var(--coral-dark);font-size:15px}
 .calc .note{padding:8px 14px 12px;font-size:12px;color:var(--muted);border-top:1px solid var(--line)}
 .reqs .steps-mini{margin:0;padding:10px 14px 4px 34px;font-size:13px;color:var(--ink);border-top:1px solid var(--line)}
@@ -436,12 +437,13 @@ document.querySelectorAll(".toggle button").forEach(function(btn){
 });
 function calcBox(txt){
   var rows=String(txt||"").split(/\n+/).map(function(x){return x.trim()}).filter(Boolean); if(!rows.length) return "";
-  var note="", body=rows.map(function(r){
-    if(/^note:/i.test(r)){ note=r.replace(/^note:\s*/i,""); return ""; }
+  var notes=[], body=rows.map(function(r){
+    if(/^note:/i.test(r)){ notes.push(r.replace(/^note:\s*/i,"")); return ""; }
+    if(r.slice(0,2)==="##") return '<tr class="sec"><td colspan="2">'+esc(r.replace(/^#+\s*/,""))+'</td></tr>';
     var hi=r.charAt(0)==="*"; if(hi) r=r.slice(1).trim();
     var p=r.split("|"); return '<tr'+(hi?' class="hi"':'')+'><td>'+esc(p[0].trim())+'</td><td>'+esc((p[1]||"").trim())+'</td></tr>';
   }).join("");
-  return '<details class="calc"><summary>Sample computation</summary><table>'+body+'</table>'+(note?'<div class="note">'+esc(note)+'</div>':'')+'</details>';
+  return '<details class="calc"><summary>Sample computation</summary><table>'+body+'</table>'+(notes.length?'<div class="note">'+notes.map(esc).join("<br><br>")+'</div>':'')+'</details>';
 }
 function reqBox(txt,i){
   var lines=String(txt||"").split(/\n/); var groups=[], steps=[], g=null;
