@@ -124,9 +124,9 @@ header{position:sticky;top:0;z-index:10;background:var(--white);border-bottom:1p
 .calc .note{padding:8px 14px 12px;font-size:12px;color:var(--muted);border-top:1px solid var(--line)}
 .reqs .steps-mini{margin:0;padding:10px 14px 4px 34px;font-size:13px;color:var(--ink);border-top:1px solid var(--line)}
 .reqs .steps-mini li{margin-bottom:6px}
-.reqs .pick{padding:8px 14px 4px;border-top:1px solid var(--line)}
-.reqs .pick label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:4px}
-.reqs .pick select{width:100%;min-height:44px;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font:15px var(--sans);color:var(--ink);background:var(--white)}
+.calc .pick{padding:8px 14px 4px;border-top:1px solid var(--line)}
+.calc .pick label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:4px}
+.calc .pick select{width:100%;min-height:44px;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font:15px var(--sans);color:var(--ink);background:var(--white)}
 .reqs ol.rl{margin:0;padding:8px 14px 12px 34px;font-size:13.5px;color:var(--ink)}
 .reqs ol.rl>li{margin-bottom:6px}
 .reqs ol.rl ul{margin:4px 0 0;padding-left:18px;color:var(--muted);font-size:13px}
@@ -423,7 +423,7 @@ function render(){
       (multi?'<div class="strip" data-strip="'+i+'">'+ph.map(function(u,k){return '<button type="button" data-jump="'+i+'" data-at="'+k+'" aria-label="Show photo '+(k+1)+'"'+(k?'':' aria-current="true"')+'><img src="'+esc(u)+'" alt="" loading="lazy"></button>'}).join("")+'</div>':'')+
       '<div class="card-body"><div class="price">'+peso(l.price)+(l.mode==="Rent"?'<small style="font-size:15px">/month</small>':'')+'</div>'+
       '<div class="monthly">'+esc(l.monthly)+'</div><h3>'+esc(l.title)+'</h3><div class="loc">'+esc(l.location)+'</div><div class="meta">'+esc(l.meta)+'</div>'+
-      calcBox(l.calc)+reqBox(l.reqs,i)+(perks.length?'<ul class="perks">'+perks.map(function(x){return '<li>'+esc(x)+'</li>'}).join("")+'</ul>':'')+
+      calcBox(l.calc,i)+reqBox(l.reqs,i)+(perks.length?'<ul class="perks">'+perks.map(function(x){return '<li>'+esc(x)+'</li>'}).join("")+'</ul>':'')+
       '<a class="btn btn-coral" '+(CONFIG.calendly?'target="_blank" rel="noopener" ':'data-ask="'+esc(l.title)+'" ')+'href="'+esc(viewHref)+'">Schedule a viewing</a></div></article>';
   }).join("");
 }
@@ -435,16 +435,22 @@ document.querySelectorAll(".toggle button").forEach(function(btn){
     fillBudget(); render();
   });
 });
-function calcBox(txt){
+function calcBox(txt,i){
   var rows=String(txt||"").split(/\n+/).map(function(x){return x.trim()}).filter(Boolean); if(!rows.length) return "";
-  var notes=[], body=rows.map(function(r){
-    if(/^note:/i.test(r)){ notes.push(r.replace(/^note:\s*/i,"")); return ""; }
-    if(r.slice(0,2)==="##") return '<tr class="sec"><td colspan="2">'+esc(r.replace(/^#+\s*/,""))+'</td></tr>';
+  var common=[], secs=[], cur=null;
+  rows.forEach(function(r){
+    if(r.slice(0,2)==="##"){ cur={name:r.replace(/^#+\s*/,""),rows:"",notes:[]}; secs.push(cur); return; }
+    if(/^note:/i.test(r)){ (cur?cur.notes:common).push(r.replace(/^note:\s*/i,"")); return; }
+    if(!cur){ cur={name:"",rows:"",notes:[]}; secs.push(cur); }
     var hi=r.charAt(0)==="*"; if(hi) r=r.slice(1).trim();
-    var p=r.split("|"); return '<tr'+(hi?' class="hi"':'')+'><td>'+esc(p[0].trim())+'</td><td>'+esc((p[1]||"").trim())+'</td></tr>';
-  }).join("");
-  return '<details class="calc"><summary>Sample computation</summary><table>'+body+'</table>'+(notes.length?'<div class="note">'+notes.map(esc).join("<br><br>")+'</div>':'')+'</details>';
+    var p=r.split("|"); cur.rows+='<tr'+(hi?' class="hi"':'')+'><td>'+esc(p[0].trim())+'</td><td>'+esc((p[1]||"").trim())+'</td></tr>';
+  });
+  var multi=secs.length>1;
+  var picker=multi?'<div class="pick"><label for="cq'+i+'">Financing option</label><select id="cq'+i+'" data-csel="'+i+'">'+secs.map(function(sc,k){return '<option value="'+k+'">'+esc(sc.name||("Option "+(k+1)))+'</option>'}).join("")+'</select></div>':'';
+  var panes=secs.map(function(sc,k){ return '<div data-cg="'+i+'" data-k="'+k+'"'+(k?' hidden':'')+'><table>'+sc.rows+'</table>'+(sc.notes.length?'<div class="note">'+sc.notes.map(esc).join("<br><br>")+'</div>':'')+'</div>'; }).join("");
+  return '<details class="calc"><summary>Sample computation</summary>'+picker+panes+(common.length?'<div class="note">'+common.map(esc).join("<br><br>")+'</div>':'')+'</details>';
 }
+document.addEventListener("change",function(e){ var s=e.target.closest("[data-csel]"); if(!s) return; document.querySelectorAll('[data-cg="'+s.dataset.csel+'"]').forEach(function(o){ o.hidden = o.dataset.k!==s.value; }); });
 function reqBox(txt,i){
   var lines=String(txt||"").split(/\n/); var groups=[], steps=[], g=null;
   lines.forEach(function(raw){ var t=raw.trim(); if(!t) return;
