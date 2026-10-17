@@ -168,7 +168,7 @@ function openListing(id){
     <label class="f">For<select id="m-mode" name="mode"><option value="Sale" ${l.mode==="Sale"?"selected":""}>Sale</option><option value="Rent" ${l.mode==="Rent"?"selected":""}>Rent</option></select></label></div>
     <div class="row"><label class="f">Location<input id="m-loc" name="location" required value="${esc(l.location)}" placeholder="Binangonan, Rizal"></label>
     <label class="f">Price (TCP, or monthly rent)<input id="m-price" name="price" type="number" min="0" required value="${esc(l.price)}"></label></div>
-    <label class="f">Required monthly income (lowest, for the income filter; leave blank if none)<input id="m-inc" name="min_income" type="number" min="0" step="0.01" value="${esc(l.min_income??"")}" placeholder="15000"></label>
+    <label class="f">Required monthly income (lowest monthly amortization × 3; leave blank if cash only)<input id="m-inc" name="min_income" type="number" min="0" step="0.01" value="${esc(l.min_income??"")}" placeholder="15000"></label>
     <label class="f">Payment line<input id="m-monthly" name="monthly" value="${esc(l.monthly)}" placeholder="DP ₱3,000/month · Pag-IBIG ₱4,900/month"></label>
     <label class="f">Details<input id="m-meta" name="meta" value="${esc(l.meta)}" placeholder="2 bedrooms, 1 bath, 36 sqm floor"></label>
     <div class="row"><label class="f">Photo<input id="m-img" name="imgfile" type="file" accept="image/jpeg,image/png,image/webp"><span class="hint">${l.img?"Leave empty to keep the current photo":"Optional"}</span></label>
