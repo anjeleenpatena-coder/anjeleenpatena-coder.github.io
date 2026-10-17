@@ -141,6 +141,15 @@ form.qrow{grid-column:1/-1;display:flex;gap:8px;background:none;border-radius:0;
 .reqs ol.rl{margin:0;padding:8px 14px 12px 34px;font-size:13.5px;color:var(--ink)}
 .reqs ol.rl>li{margin-bottom:6px}
 .reqs ol.rl ul{margin:4px 0 0;padding-left:18px;color:var(--muted);font-size:13px}
+.wins{padding-top:8px}
+.wins .eyebrow{font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--coral-dark);margin-bottom:6px}
+.won-strip{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;padding:6px 2px 14px;margin-top:22px;scrollbar-width:thin}
+.won{all:unset;flex:0 0 min(260px,72vw);scroll-snap-align:start;border-radius:16px;overflow:hidden;background:var(--white);border:1px solid var(--line);cursor:zoom-in;display:flex;flex-direction:column}
+.won:focus-visible{outline:3px solid var(--coral);outline-offset:2px}
+.won img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block}
+.won span{padding:12px 14px 14px;font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:2px}
+.won b{font-size:15px;color:var(--navy);font-weight:600}
+.won-hint{font-size:13px;color:var(--muted)}
 .empty{grid-column:1/-1;background:var(--white);border:1px dashed var(--line);border-radius:16px;padding:32px;text-align:center;color:var(--muted)}
 
 .services{background:var(--white)}
@@ -215,7 +224,7 @@ footer a{color:#BFCDE0}
       <div><b data-cfg="brand"></b><span class="role"><span data-cfg="name"></span> · <span data-cfg="title"></span></span><span class="under">Under <img id="logoSmall" alt="" hidden> <span data-cfg="realty"></span></span></div>
     </a>
     <nav aria-label="Main">
-      <a href="#listings">Listings</a><a href="#services">Services</a><a href="#ofw">For OFWs</a><a href="#contact">Contact</a>
+      <a href="#listings">Listings</a><a href="#closed-deals">Closed Deals</a><a href="#services">Services</a><a href="#ofw">For OFWs</a><a href="#contact">Contact</a>
     </nav>
     <a class="btn btn-coral" href="#contact">Message me</a>
   </div>
@@ -270,6 +279,16 @@ footer a{color:#BFCDE0}
   <img id="lbImg" alt="">
   <div class="lb-bar"><button type="button" id="lbPrev" aria-label="Previous photo">‹</button><span id="lbCount"></span><button type="button" id="lbNext" aria-label="Next photo">›</button></div>
 </div>
+
+<section class="wins" id="closed-deals">
+  <div class="wrap">
+    <p class="eyebrow">Closed deals</p>
+    <h2>Happy homeowners</h2>
+    <p class="lead">Real clients, real turnovers. These families trusted me from the first viewing to the day they got their keys.</p>
+    <div class="won-strip"><button type="button" class="won" data-won="0" aria-label="View photo: Bungalow home turnover"><img src="assets/closed/01.jpg" alt="Bungalow home turnover" loading="lazy"><span><b>Bungalow home turnover</b>Turnover day, Blk 70 Lot 22</span></button><button type="button" class="won" data-won="1" aria-label="View photo: Happy new homeowners"><img src="assets/closed/02.jpg" alt="Happy new homeowners" loading="lazy"><span><b>Happy new homeowners</b>Keys turned over</span></button><button type="button" class="won" data-won="2" aria-label="View photo: Overlooking lot, closed deal"><img src="assets/closed/03.jpg" alt="Overlooking lot, closed deal" loading="lazy"><span><b>Overlooking lot, closed deal</b>Lot tripping done, lot reserved</span></button><button type="button" class="won" data-won="3" aria-label="View photo: Dream home unlocked"><img src="assets/closed/04.jpg" alt="Dream home unlocked" loading="lazy"><span><b>Dream home unlocked</b>Sierra Manor Residences turnover</span></button><button type="button" class="won" data-won="4" aria-label="View photo: A new home for the whole family"><img src="assets/closed/05.jpg" alt="A new home for the whole family" loading="lazy"><span><b>A new home for the whole family</b>Family home turnover</span></button></div>
+    <p class="won-hint">Swipe to see more, tap a photo to view it larger.</p>
+  </div>
+</section>
 
 <section class="services" id="services">
   <div class="wrap">
@@ -490,6 +509,8 @@ function lbClose(){ $("#lb").hidden=true; document.body.style.overflow=""; if(LB
 function lbStep(d){ LB.i=(LB.i+d+LB.p.length)%LB.p.length; lbShow(); }
 $("#lbX").addEventListener("click",lbClose); $("#lbPrev").addEventListener("click",function(){lbStep(-1)}); $("#lbNext").addEventListener("click",function(){lbStep(1)});
 $("#lb").addEventListener("click",function(e){ if(e.target.id==="lb") lbClose(); });
+var WON={title:"Closed deals",img:"",photos:[1,2,3,4,5].map(function(n){return "assets/closed/0"+n+".jpg"})};
+document.addEventListener("click",function(e){ var w=e.target.closest("[data-won]"); if(w) lbOpen(WON,w,+w.dataset.won); });
 document.addEventListener("keydown",function(e){ if($("#lb").hidden) return; if(e.key==="Escape") lbClose(); if(e.key==="ArrowLeft") lbStep(-1); if(e.key==="ArrowRight") lbStep(1); });
 function slideTo(i,k){ var sl=document.querySelector('[data-slides="'+i+'"]'); if(sl) sl.scrollTo({left:k*sl.clientWidth,behavior:"smooth"}); }
 function markSlide(i,k){
