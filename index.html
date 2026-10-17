@@ -79,6 +79,7 @@ form.qrow{grid-column:1/-1;display:flex;gap:8px;background:none;border-radius:0;
 .qrow .btn{flex:0 0 auto;width:auto;min-height:48px;padding:0 22px;white-space:nowrap}
 .qrow .qwrap{flex:1 1 auto}
 @media(max-width:820px){.search{grid-template-columns:1fr 1fr}.search .toggle{grid-column:1/-1}}
+.inc-ok{display:inline-block;font-size:12px;font-weight:600;padding:3px 8px;border-radius:999px;background:#e6f4ea;color:#1e6b34;margin:4px 0}.inc-ok.maybe{background:#fff4e0;color:#8a5a00}.inc-note{font-size:14px;color:var(--muted);margin:-6px 0 14px}
 .count{font-size:14px;color:var(--muted);margin-bottom:14px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px}
 .card{background:var(--white);border:1px solid var(--line);border-radius:16px;overflow:hidden;display:flex;flex-direction:column}
@@ -268,8 +269,10 @@ footer a{color:#BFCDE0}
       <div class="field"><label for="fLoc">Location</label><select id="fLoc"><option value="">All locations</option></select></div>
       <div class="field"><label for="fBudget">Budget</label><select id="fBudget"></select></div>
       <div class="field"><label for="fSource">Listing</label><select id="fSource"><option value="">All listings</option><option value="owner">Direct to Owner</option><option value="4ph">4PH Pag-IBIG Program</option><option value="pre">Pre-Selling</option><option value="rfo">Ready for Occupancy</option></select></div>
+      <div class="field" style="grid-column:1/-1"><label for="fInc">My monthly income</label><select id="fInc"><option value="">Any income</option><option value="0-35000">₱35,000 and below</option><option value="35000-50000">₱35,000 – ₱50,000</option><option value="50000-70000">₱50,000 – ₱70,000</option><option value="70000-80000">₱70,000 – ₱80,000</option><option value="80000-90000">₱80,000 – ₱90,000</option><option value="90000-120000">₱90,000 – ₱120,000</option><option value="120000-1e12">Above ₱120,000</option></select></div>
     </div>
     <p class="count" id="count" aria-live="polite">Loading listings…</p>
+    <p class="inc-note" id="incNote" hidden></p>
     <div class="grid" id="grid"></div>
   </div>
 </section>
@@ -431,9 +434,10 @@ function fillFilters(){
 }
 function fillBudget(){ $("#fBudget").innerHTML = BUDGETS[mode].map(function(b){return '<option value="'+b[0]+'">'+b[1]+'</option>'}).join(""); }
 function render(){
-  var t=$("#fType").value, loc=$("#fLoc").value, b=$("#fBudget").value, src=$("#fSource").value, qw=norm($("#fQ").value).split(/\s+/).filter(Boolean);
+  var t=$("#fType").value, loc=$("#fLoc").value, b=$("#fBudget").value, src=$("#fSource").value, inc=$("#fInc").value, iLo=0, iHi=Infinity; if(inc){var ip=inc.split("-");iLo=+ip[0];iHi=+ip[1]} qw=norm($("#fQ").value).split(/\s+/).filter(Boolean);
   var min=0,max=Infinity; if(b){var p=b.split("-");min=+p[0];max=+p[1]}
-  var list = LISTINGS.filter(function(l){return l.mode===mode && (!t||l.type===t) && (!loc||l.location===loc) && +l.price>=min && +l.price<=max && (!src||(src==='owner'&&l.direct_owner)||(src==='4ph'&&/4PH/i.test(l.badge||''))||(src==='pre'&&l.status==='Pre-Selling')||(src==='rfo'&&l.status==='Ready for Occupancy')) && (!qw.length||qw.every(function(w){return hay(l).indexOf(w)>-1}))});
+  var list = LISTINGS.filter(function(l){return l.mode===mode && (!t||l.type===t) && (!loc||l.location===loc) && +l.price>=min && +l.price<=max && (!src||(src==='owner'&&l.direct_owner)||(src==='4ph'&&/4PH/i.test(l.badge||''))||(src==='pre'&&l.status==='Pre-Selling')||(src==='rfo'&&l.status==='Ready for Occupancy')) && (!inc||(l.min_income!=null&&+l.min_income<=iHi)) && (!qw.length||qw.every(function(w){return hay(l).indexOf(w)>-1}))});
+  if(inc){ list.sort(function(x,y){return x.min_income-y.min_income}); var noInc=LISTINGS.filter(function(l){return l.mode===mode&&l.min_income==null}).length; $("#incNote").innerHTML="Showing homes that match your income. Final approval depends on Pag-IBIG or bank evaluation."+(noInc?" "+noInc+(noInc===1?" more listing needs":" more listings need")+" a personal computation. <a href=\"#contact\">Message me</a>.":""); $("#incNote").hidden=false; } else $("#incNote").hidden=true;
   $("#count").textContent = list.length + (list.length===1?" property":" properties") + (mode==="Sale"?" for sale":" for rent");
   if(!list.length){
     $("#grid").innerHTML = '<div class="empty">No match yet. Tell me what you need, and I\'ll find it for you.<br><br><a class="btn btn-navy" href="#contact">Message me</a></div>';
@@ -455,7 +459,7 @@ function render(){
       '<span class="tag'+(l.mode==="Rent"?' rent':'')+'">'+esc(l.type)+(l.mode==="Rent"?' for rent':'')+'</span>'+((l.direct_owner||l.badge)?'<span class="owner-wrap">'+(l.direct_owner?'<span class="owner">Direct to Owner</span>':'')+String(l.badge||'').split('|').map(function(b){b=b.trim();return b?'<span class="owner'+(/sold out/i.test(b)?' sold':'')+'">'+esc(b)+'</span>':''}).join('')+'</span>':'')+'</div>'+
       (multi?'<div class="strip" data-strip="'+i+'">'+ph.map(function(u,k){return '<button type="button" data-jump="'+i+'" data-at="'+k+'" aria-label="Show photo '+(k+1)+'"'+(k?'':' aria-current="true"')+'><img src="'+esc(u)+'" alt="" loading="lazy"></button>'}).join("")+'</div>':'')+
       '<div class="card-body"><div class="price">'+peso(l.price)+(l.mode==="Rent"?'<small style="font-size:15px">/month</small>':'')+'</div>'+
-      '<div class="monthly">'+esc(l.monthly)+'</div><h3>'+esc(l.title)+'</h3><div class="loc">'+esc(l.location)+'</div><div class="meta">'+esc(l.meta)+'</div>'+
+      (inc&&l.min_income!=null?'<span class="inc-ok'+(+l.min_income>iLo?' maybe':'')+'">'+(+l.min_income>iLo?'May qualify · needs ₱':'You qualify · needs ₱')+Math.round(l.min_income).toLocaleString('en-PH')+'/mo</span>':'')+'<div class="monthly">'+esc(l.monthly)+'</div><h3>'+esc(l.title)+'</h3><div class="loc">'+esc(l.location)+'</div><div class="meta">'+esc(l.meta)+'</div>'+
       calcBox(l.calc,i)+reqBox(l.reqs,i)+(perks.length?'<ul class="perks">'+perks.map(function(x){return '<li>'+esc(x)+'</li>'}).join("")+'</ul>':'')+
       (/sold out/i.test(l.badge||'')?'<a class="btn btn-navy" data-wait="'+esc(l.title)+'" href="#contact">Notify me when it re-opens</a></div></article>':
       '<a class="btn btn-coral" '+(CONFIG.calendly?'target="_blank" rel="noopener" ':'data-ask="'+esc(l.title)+'" ')+'href="'+esc(viewHref)+'">Schedule a viewing</a></div></article>');
@@ -532,7 +536,7 @@ document.addEventListener("click",function(e){
   box.addEventListener("touchstart",function(e){x0=e.touches[0].clientX},{passive:true});
   box.addEventListener("touchend",function(e){ if(x0==null) return; var dx=e.changedTouches[0].clientX-x0; if(Math.abs(dx)>40) lbStep(dx<0?1:-1); x0=null; });
 })();
-["#fType","#fLoc","#fBudget","#fSource"].forEach(function(s){$(s).addEventListener("change",render)});
+["#fType","#fLoc","#fBudget","#fSource","#fInc"].forEach(function(s){$(s).addEventListener("change",render)});
 function norm(x){return String(x||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")}
 function hay(l){return norm([l.title,l.location,l.meta,l.perks,l.badge,l.status,l.type].join(" "))}
 var qT; $("#fQ").addEventListener("input",function(){ $("#qClear").hidden=!this.value; clearTimeout(qT); qT=setTimeout(render,200); });

@@ -160,7 +160,7 @@ function vLeads(){
       ${confirmId===l.id?`<button class="btn sm danger" data-act="lead-del-yes" data-id="${l.id}">Confirm delete</button>`:`<button class="btn sm danger" data-act="lead-del" data-id="${l.id}">Delete</button>`}</div></div>`).join("")||`<p class="empty">No inquiries yet.</p>`}</div></div>`;
 }
 function openListing(id){
-  const l=id?LIST.find(x=>x.id===id):{title:"",type:"House & Lot",mode:"Sale",location:"",price:"",monthly:"",meta:"",img:"",active:true,sort:0,direct_owner:false,perks:"",calc:"",reqs:"",badge:"",status:""};
+  const l=id?LIST.find(x=>x.id===id):{title:"",type:"House & Lot",mode:"Sale",location:"",price:"",monthly:"",meta:"",img:"",active:true,sort:0,direct_owner:false,perks:"",calc:"",reqs:"",badge:"",status:"",min_income:""};
   $("#modal-root").innerHTML=`<div class="overlay" data-act="close-bg"><form class="modal" id="f-listing" data-id="${id||""}">
     <header><h2>${id?"Edit listing":"Add listing"}</h2><button type="button" class="x" data-act="close" aria-label="Close">×</button></header>
     <label class="f">Title<input id="m-title" name="title" required value="${esc(l.title)}" placeholder="2-storey townhouse, end unit"></label>
@@ -168,6 +168,7 @@ function openListing(id){
     <label class="f">For<select id="m-mode" name="mode"><option value="Sale" ${l.mode==="Sale"?"selected":""}>Sale</option><option value="Rent" ${l.mode==="Rent"?"selected":""}>Rent</option></select></label></div>
     <div class="row"><label class="f">Location<input id="m-loc" name="location" required value="${esc(l.location)}" placeholder="Binangonan, Rizal"></label>
     <label class="f">Price (TCP, or monthly rent)<input id="m-price" name="price" type="number" min="0" required value="${esc(l.price)}"></label></div>
+    <label class="f">Required monthly income (lowest, for the income filter; leave blank if none)<input id="m-inc" name="min_income" type="number" min="0" step="0.01" value="${esc(l.min_income??"")}" placeholder="15000"></label>
     <label class="f">Payment line<input id="m-monthly" name="monthly" value="${esc(l.monthly)}" placeholder="DP ₱3,000/month · Pag-IBIG ₱4,900/month"></label>
     <label class="f">Details<input id="m-meta" name="meta" value="${esc(l.meta)}" placeholder="2 bedrooms, 1 bath, 36 sqm floor"></label>
     <div class="row"><label class="f">Photo<input id="m-img" name="imgfile" type="file" accept="image/jpeg,image/png,image/webp"><span class="hint">${l.img?"Leave empty to keep the current photo":"Optional"}</span></label>
@@ -204,7 +205,7 @@ document.addEventListener("submit",async e=>{
   if(f.id==="f-listing"){
     const btn=$("#m-save"); btn.disabled=true; btn.textContent="Saving…";
     const id=f.dataset.id, file=fd.get("imgfile");
-    const row={title:fd.get("title").trim(),type:fd.get("type"),mode:fd.get("mode"),location:fd.get("location").trim(),price:+fd.get("price")||0,monthly:fd.get("monthly").trim(),meta:fd.get("meta").trim(),sort:+fd.get("sort")||0,active:!!fd.get("active"),direct_owner:!!fd.get("direct_owner"),perks:(fd.get("perks")||"").trim(),calc:(fd.get("calc")||"").trim(),reqs:(fd.get("reqs")||"").trim(),badge:(fd.get("badge")||"").trim(),status:fd.get("status")||""};
+    const row={title:fd.get("title").trim(),type:fd.get("type"),mode:fd.get("mode"),location:fd.get("location").trim(),price:+fd.get("price")||0,monthly:fd.get("monthly").trim(),meta:fd.get("meta").trim(),sort:+fd.get("sort")||0,active:!!fd.get("active"),direct_owner:!!fd.get("direct_owner"),perks:(fd.get("perks")||"").trim(),calc:(fd.get("calc")||"").trim(),reqs:(fd.get("reqs")||"").trim(),badge:(fd.get("badge")||"").trim(),status:fd.get("status")||"",min_income:fd.get("min_income")===""?null:+fd.get("min_income")};
     if(file&&file.size){ const url=await upload(file,"listings"); if(!url){btn.disabled=false;btn.textContent="Save listing";return;} row.img=url; }
     const res=id?await sb.from("re_listings").update(row).eq("id",id):await sb.from("re_listings").insert(row);
     if(res.error){ toast("Not saved: "+res.error.message); btn.disabled=false; btn.textContent="Save listing"; return; }
