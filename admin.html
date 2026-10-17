@@ -81,7 +81,7 @@ const sb=window.supabase.createClient("https://djffchbmdvclzcfvoyhi.supabase.co"
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const peso=n=>"₱"+Number(n||0).toLocaleString("en-PH");
-const TYPES=["House & Lot","Condo","Lot / Land"];
+const TYPES=["House & Lot","Condo","Lot / Land","Memorial Lot"];
 const DEF={brand:"Welcome Home-Rizal PH",name:"Anjeleen Pateña",title:"Real Estate Salesperson",realty:"Aeroestate Realty Corp",showAccreditation:true,accreditationLabel:"PRC License No.",accreditationNumber:"0022897",accreditationPendingText:"Accreditation transfer in process",yearsInSales:"15+",familiesHelped:"",messenger:"",viber:"",whatsapp:"https://wa.me/639338552646",calendly:"",phone:"0933-855-2646",photoHero:"",photoFormal:"",photoLaptop:"",logo:"",birBadge:"",reviews:[{text:"",who:""},{text:"",who:""}]};
 const SLOTS=[["photoHero","Top section photo","assets/hero.jpg"],["photoFormal","“Why families work with me” photo","assets/formal.jpg"],["photoLaptop","OFW section photo","assets/laptop.jpg"],["logo","Realty logo (small, in header)","assets/aeroestate-logo.png"],["birBadge","BIR Registration Seal Badge","assets/bir-seal-badge.png"]];
 let SITE={...DEF}, LIST=[], LEADS=[], view="profile", confirmId=null;
