@@ -68,6 +68,16 @@ header{position:sticky;top:0;z-index:10;background:var(--white);border-bottom:1p
 .toggle button[aria-pressed="true"]{background:var(--navy);color:var(--white)}
 .field label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
 .field select,.field input,.field textarea{width:100%;min-height:44px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;font:15px var(--sans);color:var(--ink);background:var(--white)}
+form.qrow{grid-column:1/-1;display:flex;gap:8px;background:none;border-radius:0;padding:0}
+.qrow .qwrap{min-width:0}
+.qrow input::-webkit-search-cancel-button{display:none}
+.qrow .qwrap{position:relative;flex:1}
+.qrow input{width:100%;min-height:48px;border:1px solid var(--line);border-radius:12px;padding:10px 40px 10px 14px;font:16px var(--sans);color:var(--ink);background:var(--white)}
+.qrow input:focus{outline:3px solid var(--coral);outline-offset:1px;border-color:var(--coral)}
+.qrow .qclear{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border:0;border-radius:50%;background:transparent;color:var(--muted);font:600 20px var(--sans);cursor:pointer}
+.qrow .qclear[hidden]{display:none}
+.qrow .btn{flex:0 0 auto;width:auto;min-height:48px;padding:0 22px;white-space:nowrap}
+.qrow .qwrap{flex:1 1 auto}
 @media(max-width:820px){.search{grid-template-columns:1fr 1fr}.search .toggle{grid-column:1/-1}}
 .count{font-size:14px;color:var(--muted);margin-bottom:14px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px}
@@ -237,6 +247,9 @@ footer a{color:#BFCDE0}
     <h2>Find your property</h2>
     <p class="lead">House and lot, condo, or land. Filter by what you need and your budget.</p>
     <div class="search" role="search">
+      <form class="qrow" id="qForm" autocomplete="off"><label for="fQ" class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Search listings</label>
+        <div class="qwrap"><input id="fQ" type="search" enterkeyhint="search" placeholder="Search a place or project, e.g. Rizal, Antipolo, Binangonan"><button type="button" class="qclear" id="qClear" aria-label="Clear search" hidden>×</button></div>
+        <button class="btn btn-navy" type="submit">Search</button></form>
       <div class="toggle" role="group" aria-label="Buy or rent">
         <button type="button" data-mode="Sale" aria-pressed="true">Buy</button>
         <button type="button" data-mode="Rent" aria-pressed="false">Rent</button>
@@ -399,9 +412,9 @@ function fillFilters(){
 }
 function fillBudget(){ $("#fBudget").innerHTML = BUDGETS[mode].map(function(b){return '<option value="'+b[0]+'">'+b[1]+'</option>'}).join(""); }
 function render(){
-  var t=$("#fType").value, loc=$("#fLoc").value, b=$("#fBudget").value, src=$("#fSource").value;
+  var t=$("#fType").value, loc=$("#fLoc").value, b=$("#fBudget").value, src=$("#fSource").value, qw=norm($("#fQ").value).split(/\s+/).filter(Boolean);
   var min=0,max=Infinity; if(b){var p=b.split("-");min=+p[0];max=+p[1]}
-  var list = LISTINGS.filter(function(l){return l.mode===mode && (!t||l.type===t) && (!loc||l.location===loc) && +l.price>=min && +l.price<=max && (!src||(src==='owner'&&l.direct_owner)||(src==='4ph'&&/4PH/i.test(l.badge||''))||(src==='pre'&&l.status==='Pre-Selling')||(src==='rfo'&&l.status==='Ready for Occupancy'))});
+  var list = LISTINGS.filter(function(l){return l.mode===mode && (!t||l.type===t) && (!loc||l.location===loc) && +l.price>=min && +l.price<=max && (!src||(src==='owner'&&l.direct_owner)||(src==='4ph'&&/4PH/i.test(l.badge||''))||(src==='pre'&&l.status==='Pre-Selling')||(src==='rfo'&&l.status==='Ready for Occupancy')) && (!qw.length||qw.every(function(w){return hay(l).indexOf(w)>-1}))});
   $("#count").textContent = list.length + (list.length===1?" property":" properties") + (mode==="Sale"?" for sale":" for rent");
   if(!list.length){
     $("#grid").innerHTML = '<div class="empty">No match yet. Tell me what you need, and I\'ll find it for you.<br><br><a class="btn btn-navy" href="#contact">Message me</a></div>';
@@ -499,6 +512,11 @@ document.addEventListener("click",function(e){
   box.addEventListener("touchend",function(e){ if(x0==null) return; var dx=e.changedTouches[0].clientX-x0; if(Math.abs(dx)>40) lbStep(dx<0?1:-1); x0=null; });
 })();
 ["#fType","#fLoc","#fBudget","#fSource"].forEach(function(s){$(s).addEventListener("change",render)});
+function norm(x){return String(x||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")}
+function hay(l){return norm([l.title,l.location,l.meta,l.perks,l.badge,l.status,l.type].join(" "))}
+var qT; $("#fQ").addEventListener("input",function(){ $("#qClear").hidden=!this.value; clearTimeout(qT); qT=setTimeout(render,200); });
+$("#qForm").addEventListener("submit",function(e){ e.preventDefault(); render(); $("#fQ").blur(); $("#count").scrollIntoView({behavior:"smooth",block:"start"}); });
+$("#qClear").addEventListener("click",function(){ $("#fQ").value=""; this.hidden=true; render(); $("#fQ").focus(); });
 document.addEventListener("click",function(e){
   var a=e.target.closest("[data-interest]"); if(a) $("#lInterest").value="Sell my property";
   var w=e.target.closest("[data-wait]"); if(w){ $("#lInterest").value="Buy a property"; $("#lMsg").value="Please notify me when inventory re-opens for: "+w.dataset.wait; }
