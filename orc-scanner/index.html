@@ -1,0 +1,1912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="robots" content="noindex, nofollow">
+<title>Client Folder Scanner</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  :root {
+    --paper: #FAFAF7;
+    --paper-raised: #FFFFFF;
+    --ink: #1B2A3E;
+    --ink-soft: #4B5A6E;
+    --rule: #D8DCE1;
+    --rule-strong: #B7BEC7;
+    --action: #2F5D82;
+    --action-hover: #244A69;
+    --stamp: #B4791F;
+    --stamp-bg: #FBF0DD;
+    --ok: #2E7D4F;
+    --ok-bg: #E9F5EE;
+    --warn: #A23B2E;
+    --warn-bg: #FBEAE6;
+    --font-serif: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+    --font-sans: 'IBM Plex Sans', -apple-system, 'Segoe UI', sans-serif;
+    --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
+  }
+  :root:not([data-theme="light"]) {
+    @media (prefers-color-scheme: dark) {
+      --paper: #14181F;
+      --paper-raised: #1C222C;
+      --ink: #E7EAEE;
+      --ink-soft: #A6AFBC;
+      --rule: #313A47;
+      --rule-strong: #454F5E;
+      --action: #5A93BE;
+      --action-hover: #74A8D0;
+      --stamp: #D9A552;
+      --stamp-bg: #2B2416;
+      --ok: #6FC493;
+      --ok-bg: #17271F;
+      --warn: #E0897A;
+      --warn-bg: #2B1A17;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #14181F;
+    --paper-raised: #1C222C;
+    --ink: #E7EAEE;
+    --ink-soft: #A6AFBC;
+    --rule: #313A47;
+    --rule-strong: #454F5E;
+    --action: #5A93BE;
+    --action-hover: #74A8D0;
+    --stamp: #D9A552;
+    --stamp-bg: #2B2416;
+    --ok: #6FC493;
+    --ok-bg: #17271F;
+    --warn: #E0897A;
+    --warn-bg: #2B1A17;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    line-height: 1.5;
+    padding: 40px 20px 80px;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; }
+
+  header { margin-bottom: 36px; }
+  .kicker {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--stamp);
+    letter-spacing: 0.02em;
+    margin-bottom: 10px;
+  }
+  h1 {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: 32px;
+    margin: 0 0 10px;
+    color: var(--ink);
+  }
+  header p {
+    color: var(--ink-soft);
+    font-size: 15px;
+    max-width: 56ch;
+    margin: 0;
+  }
+
+  section {
+    border-top: 1px solid var(--rule);
+    padding: 28px 0;
+  }
+  section:first-of-type { border-top: none; }
+
+  .step-label {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+  }
+  h2 {
+    font-family: var(--font-serif);
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0 0 16px;
+  }
+
+  .drop-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 560px) { .drop-row { grid-template-columns: 1fr; } }
+
+  .drop {
+    border: 1.5px dashed var(--rule-strong);
+    border-radius: 4px;
+    padding: 22px 16px;
+    text-align: center;
+    background: var(--paper-raised);
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .drop:hover, .drop.drag { border-color: var(--action); background: var(--stamp-bg); }
+  .drop input { display: none; }
+  .drop .title { font-weight: 600; font-size: 14.5px; margin-bottom: 10px; }
+  .drop .count { font-family: var(--font-mono); font-size: 12.5px; color: var(--ink-soft); margin-top: 8px; }
+  .drop .count.filled { color: var(--action); }
+
+  .pick-buttons { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .pick-btn {
+    display: inline-block;
+    background: var(--action);
+    color: #fff;
+    padding: 8px 14px;
+    border-radius: 3px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .pick-btn:hover { background: var(--action-hover); }
+  .pick-btn.secondary { background: transparent; color: var(--action); border: 1px solid var(--rule-strong); }
+  .pick-btn.secondary:hover { background: var(--stamp-bg); }
+
+  .hint { color: var(--ink-soft); font-size: 12.5px; margin: 10px 0 0; }
+
+  .thumb-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; justify-content: center; }
+  .thumb {
+    width: 54px; height: 54px;
+    border-radius: 3px;
+    border: 1px solid var(--rule-strong);
+    object-fit: cover;
+    cursor: zoom-in;
+    background: var(--paper);
+  }
+  .thumb-pdf {
+    width: 54px; height: 54px;
+    border-radius: 3px;
+    border: 1px solid var(--rule-strong);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-mono); font-size: 10px; color: var(--ink-soft);
+    background: var(--paper);
+  }
+  .row-thumb {
+    width: 40px; height: 40px;
+    border-radius: 3px;
+    border: 1px solid var(--rule-strong);
+    object-fit: cover;
+    cursor: zoom-in;
+    vertical-align: middle;
+  }
+
+  .lightbox {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(20, 24, 31, 0.85);
+    z-index: 100;
+    align-items: center; justify-content: center;
+    padding: 24px;
+    cursor: zoom-out;
+  }
+  .lightbox.show { display: flex; }
+  .lightbox img { max-width: 100%; max-height: 100%; border-radius: 4px; background: #fff; }
+
+  .mismatch {
+    margin-top: 14px;
+    padding: 10px 14px;
+    background: var(--warn-bg);
+    color: var(--warn);
+    font-size: 13.5px;
+    border-radius: 3px;
+    display: none;
+  }
+  .mismatch.show { display: block; }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+  thead th {
+    text-align: left;
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    padding: 0 10px 8px;
+    border-bottom: 1px solid var(--rule);
+  }
+  tbody td {
+    padding: 10px;
+    border-bottom: 1px solid var(--rule);
+    font-size: 13.5px;
+    vertical-align: middle;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  .fname {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink-soft);
+    word-break: break-all;
+  }
+  .fname.missing { color: var(--warn); }
+  .fname.preview { color: var(--stamp); font-weight: 500; }
+  input[type="text"] {
+    width: 100%;
+    padding: 7px 9px;
+    border: 1px solid var(--rule-strong);
+    border-radius: 3px;
+    background: var(--paper-raised);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 13.5px;
+  }
+  input[type="text"]:focus { outline: 2px solid var(--action); outline-offset: 1px; }
+  .row-status { font-size: 12px; font-family: var(--font-mono); white-space: nowrap; }
+  .row-status.ok { color: var(--ok); }
+  .row-status.pending { color: var(--ink-soft); }
+  .row-status.err { color: var(--warn); }
+
+  .actions { display: flex; align-items: center; gap: 14px; margin-top: 22px; flex-wrap: wrap; }
+  button.primary {
+    background: var(--action);
+    color: #fff;
+    border: none;
+    padding: 11px 20px;
+    border-radius: 3px;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  button.primary:hover { background: var(--action-hover); }
+  button.primary:disabled { background: var(--rule-strong); cursor: not-allowed; }
+  .progress-text { font-family: var(--font-mono); font-size: 12.5px; color: var(--ink-soft); }
+  .drive-count {
+    margin-top: 14px;
+    font-family: var(--font-mono);
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--ok);
+    background: var(--ok-bg);
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 3px;
+  }
+
+  .empty-note {
+    color: var(--ink-soft);
+    font-size: 13.5px;
+    font-style: italic;
+    padding: 6px 0;
+  }
+
+  .thumb-wrap { position: relative; display: inline-block; }
+  .thumb-wrap .thumb { cursor: pointer; }
+  .thumb-badge {
+    position: absolute; right: -4px; bottom: -4px;
+    background: var(--action); color: #fff;
+    font-size: 10px; font-weight: 600;
+    border-radius: 3px; padding: 1px 4px;
+    pointer-events: none;
+  }
+  .thumb-badge.done { background: var(--ok); }
+
+  .tally {
+    display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px;
+  }
+  .tally-box {
+    background: var(--paper-raised); border: 1px solid var(--rule);
+    border-radius: 4px; padding: 10px 16px; min-width: 130px;
+  }
+  .tally-num { font-family: var(--font-serif); font-size: 28px; font-weight: 600; color: var(--action); line-height: 1.1; }
+  .tally-label { font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-soft); }
+  .tally-reset {
+    background: none; border: none; color: var(--ink-soft); font-size: 12px;
+    text-decoration: underline; cursor: pointer; align-self: flex-end; padding: 4px 0;
+  }
+  .ready-note {
+    display: none; margin-top: 14px; padding: 10px 14px; border-radius: 3px;
+    background: var(--ok-bg); color: var(--ok); font-size: 14px; font-weight: 600;
+  }
+  .ready-note.show { display: block; }
+
+  .client-card {
+    background: var(--paper-raised); border: 1px solid var(--rule);
+    border-radius: 4px; padding: 14px; margin-bottom: 12px;
+  }
+  .card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 8px; }
+  .card-title { font-family: var(--font-serif); font-weight: 600; font-size: 16px; }
+  .card-files { display: flex; gap: 22px; flex-wrap: wrap; margin-bottom: 12px; }
+  .card-sub { font-family: var(--font-mono); font-size: 11px; color: var(--ink-soft); margin-bottom: 6px; }
+  .card-thumbs { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .card-thumbs .thumb, .card-thumbs .thumb-pdf { width: 60px; height: 60px; }
+  .add-slot {
+    width: 60px; height: 60px; border: 1.5px dashed var(--rule-strong); border-radius: 3px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 600; color: var(--action); cursor: pointer; background: var(--paper);
+  }
+  .add-slot:hover { border-color: var(--action); background: var(--stamp-bg); }
+  .add-slot input { display: none; }
+  .name-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 6px; }
+  .read-btn {
+    background: transparent; color: var(--action); border: 1px solid var(--rule-strong);
+    border-radius: 3px; padding: 5px 10px; font: 600 12px var(--font-sans); cursor: pointer; white-space: nowrap;
+  }
+  .read-btn:hover { background: var(--stamp-bg); }
+  .read-btn:not(.del-btn) { display: none; }
+  .name-note { font-size: 12.5px; color: var(--warn); margin-top: 4px; }
+  .name-note:empty { display: none; }
+
+  /* ===== Scan editor ===== */
+  .editor {
+    display: none;
+    position: fixed; inset: 0; z-index: 200;
+    background: #0F1318; color: #E7EAEE;
+    flex-direction: column;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .editor.show { display: flex; }
+  .ed-bar { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; gap: 10px; }
+  .ed-title { font-family: var(--font-mono); font-size: 13px; color: #A6AFBC; }
+  .ed-stage {
+    flex: 1; min-height: 0; position: relative;
+    display: flex; align-items: center; justify-content: center;
+    padding: 18px; overflow: hidden;
+  }
+  .crop-wrap { position: relative; line-height: 0; touch-action: none; }
+  .crop-wrap canvas, #edPreview { display: block; }
+  .crop-wrap svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+  .handle {
+    position: absolute; width: 44px; height: 44px; margin: -22px 0 0 -22px;
+    touch-action: none; cursor: grab;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .handle::after {
+    content: ''; width: 18px; height: 18px; border-radius: 50%;
+    background: #fff; border: 3px solid #5A93BE;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.6);
+  }
+  .loupe {
+    position: absolute; top: 12px; left: 12px;
+    width: 120px; height: 120px; border-radius: 50%;
+    border: 3px solid #fff; box-shadow: 0 2px 10px rgba(0,0,0,0.6);
+    display: none; pointer-events: none; background: #000;
+  }
+  .ed-controls { padding: 14px 16px 16px; background: #1C222C; border-top: 1px solid #313A47; }
+  .ed-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; align-items: center; }
+  .ed-label { font-family: var(--font-mono); font-size: 11.5px; color: #A6AFBC; width: 100%; margin-bottom: -2px; }
+  .chip {
+    background: transparent; color: #E7EAEE;
+    border: 1px solid #454F5E; border-radius: 3px;
+    padding: 7px 12px; font: 600 13px var(--font-sans); cursor: pointer;
+  }
+  .chip.on { background: #5A93BE; border-color: #5A93BE; color: #fff; }
+  .slider-row { display: grid; grid-template-columns: 84px 1fr 34px; align-items: center; gap: 10px; font-size: 13px; margin-bottom: 8px; }
+  .slider-row input { width: 100%; accent-color: #5A93BE; }
+  .slider-row span:last-child { font-family: var(--font-mono); font-size: 12px; color: #A6AFBC; text-align: right; }
+  .ed-actions { display: flex; justify-content: space-between; gap: 10px; margin-top: 4px; }
+  .ed-btn {
+    border: none; border-radius: 3px; padding: 11px 18px;
+    font: 600 14px var(--font-sans); cursor: pointer;
+    background: #5A93BE; color: #fff;
+  }
+  .ed-btn.ghost { background: transparent; color: #E7EAEE; border: 1px solid #454F5E; }
+  .ed-btn.danger { background: transparent; color: #E0897A; border: 1px solid #5a3a35; padding: 7px 12px; font-size: 13px; }
+  .ed-btn.retake { background: transparent; color: #E7EAEE; border: 1px solid #454F5E; padding: 7px 12px; font-size: 13px; display: inline-flex; align-items: center; }
+  .ed-busy { font-family: var(--font-mono); font-size: 12px; color: #D9A552; }
+
+  .ask { position: fixed; inset: 0; z-index: 300; background: rgba(15,19,24,0.6); display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .ask[hidden] { display: none; }
+  .ask-card { background: var(--paper-raised); color: var(--ink); border-radius: 6px; padding: 20px; max-width: 340px; width: 100%; box-shadow: 0 8px 30px rgba(0,0,0,0.3); }
+  .ask-card p { margin: 0 0 16px; font-size: 15px; }
+  .ask-btns { display: flex; gap: 10px; justify-content: flex-end; }
+  .ask-no { color: var(--ink) !important; border-color: var(--rule-strong) !important; }
+  footer {
+    margin-top: 30px;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="kicker">ONE FOLDER PER CLIENT</div>
+    <h1>Client Folder Scanner</h1>
+    <p>Scan 1 application form and 1 valid ID per client. Each client is saved to Google Drive as one ZIP file, named First Name Middle Name Surname_Source Code. The PDFs inside are named by the source code only (e.g. SOURCECODE_01, SOURCECODE_15_C).</p>
+    <div class="tally">
+      <div class="tally-box"><div class="tally-num" id="tallyToday">0</div><div class="tally-label">CLIENTS TODAY</div></div>
+      <div class="tally-box"><div class="tally-num" id="tallyTotal">0</div><div class="tally-label">TOTAL CLIENTS</div></div>
+      <button class="tally-reset" id="tallyReset">Reset count</button>
+    </div>
+    <div class="ready-note" id="readyNote"></div>
+    <div id="openBanner" style="margin-top:14px;padding:12px 14px;border-radius:4px;background:var(--ok-bg);color:var(--ink);font-size:14px;line-height:1.5"><b>Saves straight to the ORC EWB Drive folder.</b> Type each client's name from their ID.<br><span style="color:var(--ink-soft)">Diretso po sa ORC EWB folder sa Drive. I-type po ang pangalan ng client mula sa ID.</span></div>
+  </header>
+
+  <section>
+    <div class="step-label">STEP 1</div>
+    <h2>Add your scans</h2>
+    <div class="drop-row">
+      <div class="drop" id="dropForms">
+        <div class="title">Application forms</div>
+        <div class="pick-buttons">
+          <label class="pick-btn">Take photo<input type="file" id="formCamera" accept="image/*" capture="environment"></label>
+          <label class="pick-btn secondary">Choose files<input type="file" id="formInput" multiple accept=".pdf,.jpg,.jpeg,.png"></label>
+        </div>
+        <div class="count" id="formCount">No files yet</div>
+        <div class="thumb-row" id="formThumbs"></div>
+      </div>
+      <div class="drop" id="dropIds">
+        <div class="title">Valid IDs <span style="font-weight:400;color:var(--ink-soft)">(1 or 2 per client)</span></div>
+        <div class="pick-buttons">
+          <label class="pick-btn">Take photo<input type="file" id="idCamera" accept="image/*" capture="environment"></label>
+          <label class="pick-btn secondary">Choose files<input type="file" id="idInput" multiple accept=".pdf,.jpg,.jpeg,.png"></label>
+        </div>
+        <div class="count" id="idCount">No files yet</div>
+        <div class="thumb-row" id="idThumbs"></div>
+      </div>
+    </div>
+    <div class="mismatch" id="mismatchNote"></div>
+    <p class="hint">Scan the form, then the ID. Has a 2nd ID? Tap <b>+ Add 2nd ID</b> on that client's card below. Tap any photo later to edit, retake or remove it.</p>
+  </section>
+
+  <section>
+    <div class="step-label">STEP 2</div>
+    <h2>Check each client</h2>
+    <label class="card-sub" for="sourceCode" style="display:block">DEFAULT SOURCE CODE (each client can have their own code — change it on the client's card)</label>
+    <input type="text" id="sourceCode" placeholder="e.g. TOUTORC00CD0007" style="max-width:320px;font-family:var(--font-mono);text-transform:uppercase;margin-bottom:14px" autocomplete="off">
+    <div class="actions" style="margin-bottom:16px;">
+      <button class="primary" id="autoFillBtn" disabled hidden>Re-read all names</button>
+      <span class="progress-text" id="autoFillProgress"></span>
+    </div>
+    <div id="tableWrap">
+      <p class="empty-note">Clients will show here. Each client gets 1 form + 1 ID, saved in their own folder.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="step-label">STEP 3</div>
+    <h2 id="saveTitle">Save client zips to ORC EWB</h2>
+    <div id="driveBox" hidden><label class="card-sub" for="driveFolder" style="display:block">SAVE TO THIS DRIVE FOLDER (paste the folder link)</label>
+    <input type="text" id="driveFolder" placeholder="https://drive.google.com/drive/folders/..." autocomplete="off" style="margin-bottom:6px">
+    <p class="hint" style="margin:0 0 4px" id="folderHint">Saving to: <a id="parentLink" href="#" target="_blank" rel="noopener" style="color:var(--action)">open folder</a>. For a client's Drive, ask them to share a folder with your Gmail as Editor, then paste its link here.</p></div>
+    <div class="actions">
+      <button class="primary" id="mergeAllBtn" disabled>Save all to Drive</button>
+      <span class="progress-text" id="progressText"></span>
+    </div>
+    <div class="drive-count" id="driveCount">Zips saved: 0</div>
+  </section>
+
+  <footer>Scans are processed in this browser tab. Finished ZIPs go straight to the ORC EWB Google Drive folder. Nothing is kept on this website.</footer>
+</div>
+
+<div class="ask" id="askBox" hidden><div class="ask-card"><p id="askMsg"></p><div class="ask-btns"><button class="ed-btn ghost ask-no" id="askNo">Cancel</button><button class="ed-btn" id="askYes">Yes</button></div></div></div>
+<div class="lightbox" id="lightbox"><img id="lightboxImg" src=""></div>
+
+<div class="editor" id="editor">
+  <div class="ed-bar">
+    <span class="ed-title" id="edTitle">Scanner</span>
+    <span class="ed-busy" id="edBusy"></span>
+    <span style="display:flex;gap:8px">
+      <label class="ed-btn retake" id="edRetakeLabel">Retake
+        <input type="file" id="edRetake" accept="image/*" capture="environment" style="display:none">
+      </label>
+      <button class="ed-btn danger" id="edRemove">Remove</button>
+    </span>
+  </div>
+  <div class="ed-stage" id="edStage">
+    <div class="crop-wrap" id="cropWrap">
+      <canvas id="edCrop"></canvas>
+      <svg viewBox="0 0 1 1" preserveAspectRatio="none">
+        <polygon id="cropPoly" points="" fill="rgba(90,147,190,0.18)" stroke="#5A93BE" stroke-width="2" vector-effect="non-scaling-stroke"/>
+      </svg>
+      <div class="handle" data-i="0"></div>
+      <div class="handle" data-i="1"></div>
+      <div class="handle" data-i="2"></div>
+      <div class="handle" data-i="3"></div>
+    </div>
+    <canvas id="edPreview" style="display:none"></canvas>
+    <canvas class="loupe" id="loupe" width="120" height="120"></canvas>
+  </div>
+
+  <div class="ed-controls" id="cropControls">
+    <div class="ed-row">
+      <span class="ed-label">STEP 1 · DRAG THE 4 DOTS TO THE PAPER CORNERS</span>
+      <button class="chip" id="edRotate">Rotate ↻</button>
+      <button class="chip" id="edFull">Full photo</button>
+      <button class="chip" id="edResetCrop">Reset</button>
+    </div>
+    <div class="ed-actions">
+      <button class="ed-btn ghost" id="edCancel">Cancel</button>
+      <button class="ed-btn" id="edNext">Crop &amp; next →</button>
+    </div>
+  </div>
+
+  <div class="ed-controls" id="enhanceControls" style="display:none">
+    <div class="ed-row" id="filterRow">
+      <span class="ed-label">STEP 2 · FILTER</span>
+      <button class="chip" data-filter="original">Original</button>
+      <button class="chip" data-filter="magic">Magic color</button>
+      <button class="chip" data-filter="gray">Grayscale</button>
+      <button class="chip" data-filter="bw">B&amp;W</button>
+    </div>
+    <div class="slider-row"><span>Brightness</span><input type="range" id="edBright" min="-50" max="50" value="0"><span id="edBrightVal">0</span></div>
+    <div class="slider-row"><span>Contrast</span><input type="range" id="edContrast" min="-50" max="50" value="0"><span id="edContrastVal">0</span></div>
+    <div class="ed-row" id="qualityRow">
+      <span class="ed-label">PDF QUALITY</span>
+      <button class="chip" data-q="small">Small file</button>
+      <button class="chip" data-q="standard">Standard</button>
+      <button class="chip" data-q="high">High</button>
+    </div>
+    <div class="ed-actions">
+      <button class="ed-btn ghost" id="edBack">← Back to crop</button>
+      <button class="ed-btn" id="edSave">Save scan</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== SETTINGS =====
+// Paste the Apps Script web app link here (ends in /exec).
+const UPLOAD_URL = 'PASTE_APPS_SCRIPT_URL_HERE';
+const UPLOAD_KEY = 'VupuPluQYLV-sp8uE1WmHQaH';
+// This page runs outside Claude, so Claude features are switched off.
+window.claude = window.claude || { use: async () => null };
+const claude = window.claude;
+const DEFAULT_FOLDER_ID = '1OofQhO3Upb-d9_Jv2tFFQjYFPh2KIkb8'; // "ORC EWB" (client's shared folder)
+const FOLDER_KEY = 'cfs-drive-folder-v1';
+const driveFolderInput = document.getElementById('driveFolder');
+function folderIdFrom(text) {
+  const t = (text || '').trim();
+  if (!t) return DEFAULT_FOLDER_ID;
+  const m = t.match(/\/folders\/([A-Za-z0-9_-]{10,})/) || t.match(/[?&]id=([A-Za-z0-9_-]{10,})/);
+  if (m) return m[1];
+  return /^[A-Za-z0-9_-]{10,}$/.test(t) ? t : null;
+}
+function getParentId() { return folderIdFrom(driveFolderInput.value); }
+function syncFolderLink() {
+  const id = getParentId();
+  const a = document.getElementById('parentLink');
+  if (id) { a.href = 'https://drive.google.com/drive/folders/' + id; a.textContent = id === DEFAULT_FOLDER_ID ? 'ORC EWB (client’s Drive)' : 'open folder'; }
+  else { a.removeAttribute('href'); a.textContent = 'that link isn\u2019t a Drive folder link'; }
+}
+try { driveFolderInput.value = localStorage.getItem(FOLDER_KEY) || ''; } catch (e) {}
+driveFolderInput.addEventListener('input', () => {
+  try { localStorage.setItem(FOLDER_KEY, driveFolderInput.value.trim()); } catch (e) {}
+  syncFolderLink();
+});
+syncFolderLink();
+const { PDFDocument } = PDFLib;
+// In-page confirm (the viewer blocks browser pop-ups).
+function askConfirm(msg, yesLabel) {
+  return new Promise(res => {
+    const box = document.getElementById('askBox');
+    document.getElementById('askMsg').textContent = msg;
+    const yes = document.getElementById('askYes'), no = document.getElementById('askNo');
+    yes.textContent = yesLabel || 'Yes';
+    const done = v => { box.hidden = true; yes.onclick = no.onclick = null; res(v); };
+    yes.onclick = () => done(true); no.onclick = () => done(false);
+    box.hidden = false; yes.focus();
+  });
+}
+function notify(msg) { document.getElementById('progressText').textContent = msg; }
+const MAX_IDS = 2;
+
+// One entry per client: 1 application form + up to 3 ID photos.
+let clients = [];
+
+const formInput = document.getElementById('formInput');
+const idInput = document.getElementById('idInput');
+const formCamera = document.getElementById('formCamera');
+const idCamera = document.getElementById('idCamera');
+const formCount = document.getElementById('formCount');
+const idCount = document.getElementById('idCount');
+const dropForms = document.getElementById('dropForms');
+const dropIds = document.getElementById('dropIds');
+const tableWrap = document.getElementById('tableWrap');
+const mismatchNote = document.getElementById('mismatchNote');
+const mergeAllBtn = document.getElementById('mergeAllBtn');
+const progressText = document.getElementById('progressText');
+const driveCount = document.getElementById('driveCount');
+const autoFillBtn = document.getElementById('autoFillBtn');
+const autoFillProgress = document.getElementById('autoFillProgress');
+const lightbox = document.getElementById('lightbox');
+const lightboxImg = document.getElementById('lightboxImg');
+
+lightbox.addEventListener('click', () => lightbox.classList.remove('show'));
+
+const isImg = f => f && f.type && f.type.startsWith('image/');
+function newClient() { return { form: null, ids: [], name: '', nameAuto: false, code: '' }; }
+
+// ---------- file refs (used by the scanner) ----------
+function getRefFile(ref) {
+  const c = clients[ref.ci];
+  if (!c) return null;
+  return ref.kind === 'form' ? c.form : c.ids[ref.slot];
+}
+function setRefFile(ref, f) {
+  const c = clients[ref.ci];
+  if (!c) return;
+  if (ref.kind === 'form') { c.form = f; c.formDone = false; } else { const old = c.ids[ref.slot]; if (old && old.idTypeManual) { f.idType = old.idType; f.idTypeManual = true; } c.ids[ref.slot] = f; }
+}
+function removeRefFile(ref) {
+  const c = clients[ref.ci];
+  if (!c) return;
+  if (ref.kind === 'form') c.form = null; else c.ids.splice(ref.slot, 1);
+  if (!c.form && c.ids.length === 0) clients.splice(ref.ci, 1);
+}
+
+// ---------- adding files ----------
+function addForms(files) {
+  const refs = [];
+  files.forEach(f => {
+    let ci = clients.findIndex(c => !c.form);
+    if (ci < 0) { clients.push(newClient()); ci = clients.length - 1; }
+    clients[ci].form = f;
+    refs.push({ ci, kind: 'form' });
+  });
+  return refs;
+}
+function addIds(files, targetCi) {
+  const refs = [];
+  files.forEach(f => {
+    let ci = targetCi;
+    if (ci === undefined || !clients[ci] || clients[ci].ids.length >= MAX_IDS) {
+      ci = clients.findIndex(c => c.ids.length === 0);
+      if (ci < 0) {
+        const last = clients.length - 1;
+        ci = (last >= 0 && clients[last].ids.length < MAX_IDS) ? last : -1;
+      }
+      if (ci < 0) { clients.push(newClient()); ci = clients.length - 1; }
+    }
+    clients[ci].ids.push(f);
+    refs.push({ ci, kind: 'id', slot: clients[ci].ids.length - 1 });
+  });
+  return refs;
+}
+
+function setupDrop(dropEl, inputs, onFiles) {
+  inputs.forEach(input => input.addEventListener('change', e => {
+    onFiles(Array.from(e.target.files), input);
+    input.value = '';
+  }));
+  ['dragenter','dragover'].forEach(evt => dropEl.addEventListener(evt, e => {
+    e.preventDefault(); dropEl.classList.add('drag');
+  }));
+  ['dragleave','drop'].forEach(evt => dropEl.addEventListener(evt, e => {
+    e.preventDefault(); dropEl.classList.remove('drag');
+  }));
+  dropEl.addEventListener('drop', e => {
+    e.preventDefault();
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length) onFiles(files);
+  });
+}
+
+setupDrop(dropForms, [formInput, formCamera], (files, input) => {
+  const refs = addForms(files);
+  refreshLists();
+  if (input === formCamera && refs[0] && isImg(files[0])) openEditor(refs[0]);
+});
+setupDrop(dropIds, [idInput, idCamera], (files, input) => {
+  const refs = addIds(files);
+  refreshLists();
+  if (input === idCamera && refs[0] && isImg(files[0])) openEditor(refs[0]);
+});
+
+function escHtml(t) { return String(t).replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch])); }
+const SRC_KEY = 'cfs-source-code-v1';
+const sourceCodeInput = document.getElementById('sourceCode');
+function getSourceCode() { return sanitizeName(sourceCodeInput.value || '').replace(/\s+/g, '').toUpperCase(); }
+try { sourceCodeInput.value = localStorage.getItem(SRC_KEY) || 'TOUTORC00CD0007'; } catch (e) { sourceCodeInput.value = 'TOUTORC00CD0007'; }
+sourceCodeInput.addEventListener('input', () => {
+  try { localStorage.setItem(SRC_KEY, getSourceCode()); } catch (e) {}
+  document.querySelectorAll('.codeInput').forEach(el => { el.placeholder = getSourceCode() || 'e.g. TOUTORC00C00006'; });
+  clients.forEach(refreshPreview);
+});
+const ID_TYPES = [
+  ['A','ACR'],['B','NBI / Police Clearance'],['C','Senior Citizen Card'],['D','Driver\u2019s License'],
+  ['E','Voter\u2019s ID'],['F','Company ID'],['G','GSIS ID'],['H','PhilHealth'],['I','Integrated Bar of the Philippines'],
+  ['J','Student\u2019s ID'],['K','PhilSys / National ID'],['L','Postal ID'],['M','Seaman\u2019s Book'],
+  ['N','National Council on Disability Affairs'],['O','PRC ID'],['P','Passport'],['Q','Pag-IBIG ID'],
+  ['R','Government and GOCC IDs'],['S','SSS ID'],['T','TIN'],['U','Unified ID (UMID)'],['V','Visa'],
+  ['W','PWD ID'],['X','Depositor'],['Y','ETB Loan']
+];
+const ID_CODES = new Set(ID_TYPES.map(t => t[0]));
+function idTypeSelect(f, i, slot) {
+  return '<select class="idTypeSel" id="idtype-' + i + '-' + slot + '" data-ci="' + i + '" data-slot="' + slot + '" aria-label="ID ' + (slot + 1) + ' type" style="margin-top:8px;max-width:200px;padding:6px;border:1px solid var(--rule-strong);border-radius:3px;background:var(--paper-raised);color:var(--ink);font:13px var(--font-sans)">' +
+    '<option value="">ID type\u2026</option>' +
+    ID_TYPES.map(t => '<option value="' + t[0] + '"' + (f.idType === t[0] ? ' selected' : '') + '>' + t[0] + ' \u2013 ' + escHtml(t[1]) + '</option>').join('') + '</select>';
+}
+function refreshPreview(c) {
+  const i = clients.indexOf(c);
+  const el = document.getElementById('preview-' + i);
+  if (el) el.innerHTML = folderPreview(sanitizeName(c.name || ''), c);
+  c.ids.forEach((f, s) => { const sel = document.getElementById('idtype-' + i + '-' + s); if (sel) sel.value = f.idType || ''; });
+}
+function cleanCode(t) { return sanitizeName(t || '').replace(/\s+/g, '').toUpperCase(); }
+function codeFor(c) { return (c && cleanCode(c.code)) || getSourceCode(); }
+function withCode(clean, c) {
+  const code = codeFor(c);
+  if (!code) return clean;
+  // If the source code was already typed in the name box, don't add it twice.
+  let base = clean;
+  const tail = '_' + code;
+  while (base.toUpperCase().endsWith(tail)) base = base.slice(0, -tail.length).trim();
+  base = base.replace(/_+$/, '').trim();
+  return base + tail;
+}
+function idFileNames(c) {
+  const used = {};
+  return c.ids.map(f => {
+    if (!f.idType) return null;
+    used[f.idType] = (used[f.idType] || 0) + 1;
+    return '_15_' + f.idType + (used[f.idType] > 1 ? '_' + used[f.idType] : '');
+  });
+}
+function folderPreview(clean, c) {
+  if (!clean) return '\u2014';
+  const n = escHtml(withCode(clean, c));
+  const k = escHtml(codeFor(c) || n);
+  const names = c ? idFileNames(c) : [];
+  const idLines = (c ? c.ids : []).map((f, s) => '<br>&nbsp;&nbsp;&nbsp;\u2514 ' + (names[s] ? k + names[s] + '.pdf' : '<span style="color:var(--warn)">pick the type for ID ' + (s + 1) + '</span>') + ' <i>(ID ' + (s + 1) + ')</i>').join('');
+  return '\ud83d\udddc\ufe0f ' + n + '.zip<br>\u2514 \ud83d\udcc1 ' + n + '<br><span style="color:var(--ink-soft);font-weight:400">&nbsp;&nbsp;&nbsp;\u2514 ' + k + '_01.pdf <i>(application form)</i>' + idLines + '</span>';
+}
+function sanitizeName(name) {
+  return name.trim().replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, ' ');
+}
+
+// ---------- rendering ----------
+function plural(n, word) { return n + ' ' + word + (n === 1 ? '' : 's'); }
+
+function refreshLists() {
+  const nForms = clients.filter(c => c.form).length;
+  const nIds = clients.reduce((s, c) => s + c.ids.length, 0);
+  formCount.textContent = nForms ? plural(nForms, 'form') + ' added' : 'No files yet';
+  formCount.classList.toggle('filled', nForms > 0);
+  idCount.textContent = nIds ? plural(nIds, 'ID photo') + ' added' : 'No files yet';
+  idCount.classList.toggle('filled', nIds > 0);
+  syncAutoNames();
+  renderTable();
+  setTimeout(scheduleAutoRead, 0);
+}
+
+function thumbHtml(file, ci, kind, slot, label) {
+  const refAttr = ' data-ci="' + ci + '" data-kind="' + kind + '" data-slot="' + (slot === undefined ? '' : slot) + '"';
+  if (isImg(file)) {
+    return '<span class="thumb-wrap"><img class="thumb edit-thumb"' + refAttr + ' src="' + URL.createObjectURL(file) + '" title="Tap to crop / enhance">' +
+      '<span class="thumb-badge' + (file.scanState ? ' done' : '') + '">' + (file.scanState ? '\u2713' : label) + '</span></span>';
+  }
+  return '<span class="thumb-wrap"><div class="thumb-pdf">PDF</div><span class="thumb-badge">' + label + '</span></span>';
+}
+
+function renderTable() {
+  if (clients.length === 0) {
+    tableWrap.innerHTML = '<p class="empty-note">Clients will show here. Each client gets 1 form + 1 ID, saved in their own folder.</p>';
+    mergeAllBtn.disabled = true;
+    autoFillBtn.disabled = true;
+    mismatchNote.classList.remove('show');
+    return;
+  }
+
+  const problems = [];
+  clients.forEach((c, i) => {
+    if (!c.form) problems.push('Client ' + (i + 1) + ' has no form');
+    if (c.ids.length === 0) problems.push('Client ' + (i + 1) + ' has no ID');
+  });
+  if (problems.length) {
+    mismatchNote.textContent = problems.join(' \u00b7 ') + '. Add the missing file on that client below.';
+    mismatchNote.classList.add('show');
+  } else {
+    mismatchNote.classList.remove('show');
+  }
+
+  let html = '';
+  clients.forEach((c, i) => {
+    const clean = sanitizeName(c.name || '');
+    let idThumbs = c.ids.map((f, s) => thumbHtml(f, i, 'id', s, 'ID ' + (s + 1))).join('');
+    if (c.ids.length < MAX_IDS) {
+      idThumbs += c.ids.length
+        ? '<label class="pick-btn secondary" style="align-self:center">+ Add 2nd ID<input type="file" class="addIdInput" data-ci="' + i + '" accept="image/*,.pdf" style="display:none"></label>'
+        : '<label class="add-slot">+ ID<input type="file" class="addIdInput" data-ci="' + i + '" accept="image/*,.pdf"></label>';
+    }
+    const formThumb = c.form
+      ? thumbHtml(c.form, i, 'form', undefined, 'Form')
+      : '<label class="add-slot">+ Form<input type="file" class="addFormInput" data-ci="' + i + '" accept="image/*,.pdf"></label>';
+    html +=
+      '<div class="client-card">' +
+        '<div class="card-head"><span class="card-title">Client ' + (i + 1) + '</span>' +
+        '<span style="display:flex;gap:10px;align-items:center"><span class="row-status pending" id="status-' + i + '">not saved</span>' +
+        '<button class="read-btn del-btn" data-ci="' + i + '" title="Delete this client">Delete</button></span></div>' +
+        '<div class="card-files">' +
+          '<div><div class="card-sub">FORM</div><div class="card-thumbs">' + formThumb + '</div></div>' +
+          '<div><div class="card-sub">VALID ID (' + c.ids.length + '/' + MAX_IDS + ')</div><div class="card-thumbs">' + idThumbs + '</div>' + c.ids.map((f, s) => '<div>' + idTypeSelect(f, i, s) + '</div>').join('') + '</div>' +
+        '</div>' +
+        '<label class="card-sub" style="display:block">SOURCE CODE FOR THIS CLIENT</label>' +
+        '<input type="text" class="codeInput" data-ci="' + i + '" placeholder="' + escHtml(getSourceCode() || 'e.g. TOUTORC00C00006') + '" value="' + escHtml(c.code || '') + '" autocomplete="off" style="max-width:320px;font-family:var(--font-mono);text-transform:uppercase;margin-bottom:8px">' +
+        '<label class="card-sub" style="display:block">CLIENT NAME</label>' +
+        '<input type="text" class="nameInput" data-ci="' + i + '" placeholder="First Name Middle Name Surname" value="' + (c.name || '').replace(/"/g, '&quot;') + '">' +
+        '<div class="name-row"><div class="fname preview" id="preview-' + i + '">' + folderPreview(clean, c) + '</div>' +
+        (c.ids.some(isImg) ? '<button class="read-btn" data-ci="' + i + '">Read name</button>' : '') + '</div>' +
+        '<div class="name-note" id="namenote-' + i + '">' + (readErrors.get(c) && !c.name ? readErrors.get(c) + ' \u2014 retake a clearer photo or tap Read name.' : '') + '</div>' +
+      '</div>';
+  });
+  tableWrap.innerHTML = html;
+
+  tableWrap.querySelectorAll('.edit-thumb').forEach(el => {
+    el.addEventListener('click', () => {
+      const ref = { ci: +el.dataset.ci, kind: el.dataset.kind };
+      if (el.dataset.slot !== '') ref.slot = +el.dataset.slot;
+      openEditor(ref);
+    });
+  });
+  tableWrap.querySelectorAll('.addIdInput').forEach(inp => inp.addEventListener('change', e => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+    const refs = addIds(files, +inp.dataset.ci);
+    refreshLists();
+    if (refs[0] && isImg(files[0])) openEditor(refs[0]);
+  }));
+  tableWrap.querySelectorAll('.addFormInput').forEach(inp => inp.addEventListener('change', e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const ci = +inp.dataset.ci;
+    clients[ci].form = f;
+    refreshLists();
+    if (isImg(f)) openEditor({ ci, kind: 'form' });
+  }));
+  tableWrap.querySelectorAll('.del-btn').forEach(btn => btn.addEventListener('click', async () => {
+    const ci = +btn.dataset.ci;
+    if (!clients[ci]) return;
+    if (!(await askConfirm('Delete Client ' + (ci + 1) + ' and its scans?', 'Delete'))) return;
+    clients.splice(ci, 1);
+    refreshLists();
+  }));
+  tableWrap.querySelectorAll('.read-btn:not(.del-btn)').forEach(btn => btn.addEventListener('click', () => {
+    const c = clients[+btn.dataset.ci];
+    if (c) rereadClient(c);
+  }));
+  tableWrap.querySelectorAll('.nameInput').forEach(inp => {
+    inp.addEventListener('input', () => {
+      const c = clients[+inp.dataset.ci];
+      if (!c) return;
+      c.name = inp.value;
+      c.nameAuto = false;
+      const clean = sanitizeName(inp.value);
+      document.getElementById('preview-' + inp.dataset.ci).innerHTML = folderPreview(clean, c);
+    });
+  });
+  tableWrap.querySelectorAll('.codeInput').forEach(inp => inp.addEventListener('input', () => {
+    const c = clients[+inp.dataset.ci];
+    if (!c) return;
+    c.code = inp.value;
+    refreshPreview(c);
+  }));
+  tableWrap.querySelectorAll('.idTypeSel').forEach(sel => sel.addEventListener('change', () => {
+    const c = clients[+sel.dataset.ci];
+    if (!c) return;
+    const f = c.ids[+sel.dataset.slot];
+    if (!f) return;
+    f.idType = sel.value; f.idTypeManual = !!sel.value;
+    refreshPreview(c);
+  }));
+
+  mergeAllBtn.disabled = false;
+  autoFillBtn.disabled = !clients.some(c => c.ids.length);
+}
+
+function setClientNameInDom(c) {
+  const i = clients.indexOf(c);
+  if (i < 0) return;
+  const inp = document.querySelector('.nameInput[data-ci="' + i + '"]');
+  if (inp) inp.value = c.name;
+  const prev = document.getElementById('preview-' + i);
+  const clean = sanitizeName(c.name || '');
+  if (prev) prev.innerHTML = folderPreview(clean, c);
+  c.ids.forEach((f, s) => { const sel = document.getElementById('idtype-' + i + '-' + s); if (sel) sel.value = f.idType || ''; });
+}
+
+// ---------- PDF building ----------
+async function compressImageToJpeg(file, maxDim, quality) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      let { width, height } = img;
+      if (width > height && width > maxDim) {
+        height = Math.round(height * maxDim / width);
+        width = maxDim;
+      } else if (height >= width && height > maxDim) {
+        width = Math.round(width * maxDim / height);
+        height = maxDim;
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      canvas.toBlob(blob => {
+        URL.revokeObjectURL(url);
+        if (!blob) { reject(new Error('image compression failed')); return; }
+        blob.arrayBuffer().then(buf => resolve(new Uint8Array(buf)));
+      }, 'image/jpeg', quality);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('could not read image')); };
+    img.src = url;
+  });
+}
+
+async function fileToPdfPages(mergedPdf, file, maxDim, quality, attempt) {
+  if (attempt === 0 && file.scanSettings) {
+    maxDim = file.scanSettings.maxDim;
+    quality = file.scanSettings.quality;
+  }
+  const isPdf = (file.type || '') === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+  if (isPdf) {
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const src = await PDFDocument.load(bytes);
+    const pages = await mergedPdf.copyPages(src, src.getPageIndices());
+    pages.forEach(p => mergedPdf.addPage(p));
+  } else {
+    const jpegBytes = await compressImageToJpeg(file, maxDim, quality);
+    const img = await mergedPdf.embedJpg(jpegBytes);
+    const page = mergedPdf.addPage([img.width, img.height]);
+    page.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
+  }
+}
+
+async function fileToPdf(file, maxDim, quality, attempt) {
+  const pdf = await PDFDocument.create();
+  await fileToPdfPages(pdf, file, maxDim, quality, attempt);
+  return await pdf.save();
+}
+
+async function mergeClient(c, maxDim, quality, attempt) {
+  const mergedPdf = await PDFDocument.create();
+  if (c.form) await fileToPdfPages(mergedPdf, c.form, maxDim, quality, attempt);
+  for (const f of c.ids) await fileToPdfPages(mergedPdf, f, maxDim, quality, attempt);
+  return await mergedPdf.save();
+}
+
+const COMPRESSION_LADDER = [
+  { maxDim: 1400, quality: 0.65 },
+  { maxDim: 1000, quality: 0.5 },
+  { maxDim: 750, quality: 0.4 },
+  { maxDim: 550, quality: 0.35 }
+];
+
+function uint8ToBase64(bytes) {
+  let binary = '';
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+  }
+  return btoa(binary);
+}
+
+// ================= SAVE: ONE DRIVE FOLDER PER CLIENT =================
+// Pull a Drive file id out of a create_file result (payload or text content).
+function pickDriveId(res) {
+  const p = res && (res.payload !== undefined ? res.payload : res);
+  if (p && typeof p === 'object' && p.id) return p.id;
+  const blocks = (res && res.content) || [];
+  for (const b of blocks) {
+    if (b && b.type === 'text' && b.text) {
+      try { const j = JSON.parse(b.text); if (j && j.id) return j.id; } catch (e) {}
+      const m = b.text.match(/"id"\s*:\s*"([^"]+)"/);
+      if (m) return m[1];
+    }
+  }
+  return null;
+}
+
+async function createClientFolder(mcp, name) {
+  const res = await mcp.callTool('Google Drive', 'create_file', {
+    title: name,
+    contentMimeType: 'application/vnd.google-apps.folder',
+    parentId: getParentId()
+  }, { cache: false });
+  const id = pickDriveId(res);
+  if (!id) throw new Error('folder was not created');
+  return id;
+}
+
+// Upload one scan as its own PDF into the client folder.
+// Big-file route first (full quality); otherwise shrink until it fits inline.
+async function uploadScanPdf(mcp, fileRoute, scan, folderId, fileName, statusEl, label) {
+  let lastBytes = null, lastErr = null;
+  if (fileRoute) {
+    try {
+      statusEl.textContent = 'uploading ' + label + '…';
+      const bytes = await fileToPdf(scan, 2000, 0.82, 0);
+      lastBytes = bytes;
+      await mcp.callTool('Google Drive', 'create_file', {
+        title: fileName,
+        base64Content: { $file: { data: new Blob([bytes], { type: 'application/pdf' }), name: 'scan.pdf', type: 'application/pdf' } },
+        contentMimeType: 'application/pdf',
+        disableConversionToGoogleType: true,
+        parentId: folderId
+      }, { cache: false });
+      return { ok: true };
+    } catch (err) {
+      lastErr = err;
+      const code = err && err.code;
+      if (code && !['bad_request', 'capability_disabled', 'transform_error'].includes(code)) {
+        return { ok: false, err, bytes: lastBytes };
+      }
+    }
+  }
+  for (let attempt = 0; attempt < COMPRESSION_LADDER.length; attempt++) {
+    const { maxDim, quality } = COMPRESSION_LADDER[attempt];
+    statusEl.textContent = attempt === 0 ? 'uploading ' + label + '…' : 'shrinking ' + label + ' (try ' + (attempt + 1) + ')…';
+    try {
+      const bytes = await fileToPdf(scan, maxDim, quality, attempt);
+      lastBytes = bytes;
+      const b64 = uint8ToBase64(bytes);
+      if (b64.length > 900000 && attempt < COMPRESSION_LADDER.length - 1) continue;
+      await mcp.callTool('Google Drive', 'create_file', {
+        title: fileName,
+        base64Content: b64,
+        contentMimeType: 'application/pdf',
+        disableConversionToGoogleType: true,
+        parentId: folderId
+      }, { cache: false });
+      return { ok: true };
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  return { ok: false, err: lastErr, bytes: lastBytes };
+}
+
+async function uploadZip(blob, name) {
+  if (!/^https:\/\/script\.google\.com\//.test(UPLOAD_URL)) throw new Error('uploader link not set yet');
+  const b64 = uint8ToBase64(new Uint8Array(await blob.arrayBuffer()));
+  const res = await fetch(UPLOAD_URL, { method: 'POST', body: JSON.stringify({ key: UPLOAD_KEY, name, data: b64 }) });
+  let out = null;
+  try { out = await res.json(); } catch (e) {}
+  if (!out || !out.ok) throw new Error((out && out.error) || 'upload failed (' + res.status + ')');
+  return out;
+}
+
+mergeAllBtn.addEventListener('click', async () => {
+  if (autoReading) {
+    notify('Still reading names from the IDs. Wait a few seconds, then tap Save again.');
+    return;
+  }
+  if (clients.some(c => !sanitizeName(c.name || ''))) {
+    notify('Type a name for every client before saving.');
+    return;
+  }
+  if (clients.some(c => c.ids.some(f => !f.idType))) {
+    notify('Pick the ID type for every client before saving.');
+    return;
+  }
+  await mcpReady;
+  if (!downloadMode && !getParentId()) {
+    notify('Paste a valid Google Drive folder link first.');
+    driveFolderInput.focus();
+    return;
+  }
+  if (clients.some(c => !codeFor(c))) {
+    notify('Type a source code for every client first (Step 2).');
+    sourceCodeInput.focus();
+    return;
+  }
+
+  mergeAllBtn.disabled = true;
+  document.getElementById('readyNote').classList.remove('show');
+  const batch = clients.slice();
+  const count = batch.length;
+  const usedNames = {};
+  const finished = [];
+  let doneCount = 0;
+  driveCount.textContent = 'Zips saved: 0';
+
+  const mcp = await claude.use('mcp');
+  const downloadsCap = await claude.use('downloads');
+  if (!mcp) {
+    driveCount.textContent = 'Zips saved: 0';
+    for (let i = 0; i < count; i++) {
+      const c = batch[i];
+      const statusEl = document.getElementById('status-' + i);
+      if (!c.form || c.ids.length === 0) {
+        statusEl.textContent = 'skipped (missing form or ID)';
+        statusEl.className = 'row-status err';
+        continue;
+      }
+      progressText.textContent = 'Saving client ' + (i + 1) + ' of ' + count;
+      statusEl.className = 'row-status pending';
+      statusEl.textContent = 'zipping…';
+      const baseName = withCode(sanitizeName(c.name), c);
+      const fileCode = codeFor(c);
+      let finalName = baseName;
+      if (usedNames[baseName] !== undefined) { usedNames[baseName]++; finalName = baseName + ' (' + (usedNames[baseName] + 1) + ')'; }
+      else usedNames[baseName] = 0;
+      const entries = [{ scan: c.form, file: fileCode + '_01.pdf' }];
+      const idNames = idFileNames(c);
+      c.ids.forEach((f, s) => entries.push({ scan: f, file: fileCode + idNames[s] + '.pdf' }));
+      const zipName = finalName + '.zip';
+      let ok = false, err = '';
+      try {
+        const { maxDim, quality } = COMPRESSION_LADDER[0];
+        const zip = new JSZip();
+        const dir = zip.folder(finalName);
+        for (const e of entries) dir.file(e.file, await fileToPdf(e.scan, maxDim, quality, 0));
+        const blob = new Blob([await zip.generateAsync({ type: 'uint8array', compression: 'DEFLATE', compressionOptions: { level: 6 } })], { type: 'application/zip' });
+        statusEl.textContent = 'uploading to Drive…';
+        try { await uploadZip(blob, zipName); ok = true; }
+        catch (e) {
+          err = e && e.message ? e.message : 'upload failed';
+          try { plainDownload(blob, zipName); err += ' — saved to this phone instead'; } catch (e2) {}
+        }
+      } catch (e) { err = e && e.message ? e.message : 'unknown error'; }
+      if (ok) {
+        statusEl.textContent = 'saved to ORC EWB';
+        statusEl.className = 'row-status ok';
+        doneCount++;
+        driveCount.textContent = 'Zips saved: ' + doneCount;
+        addToTally(1);
+        finished.push(c);
+      } else {
+        statusEl.textContent = 'failed: ' + err;
+        statusEl.className = 'row-status err';
+      }
+    }
+    progressText.textContent = doneCount ? 'Done. Check the ORC EWB folder in Google Drive.' : '';
+    driveCount.textContent = 'Zips saved: ' + doneCount + ' of ' + count;
+    resetAfterUpload(finished);
+    mergeAllBtn.disabled = clients.length === 0;
+    return;
+  }
+  let fileRoute = false;
+  try { const lt = await mcp.listTools(); fileRoute = !!(lt && lt.fileArgs); } catch (e) {}
+
+  for (let i = 0; i < count; i++) {
+    const c = batch[i];
+    const statusEl = document.getElementById('status-' + i);
+    if (!c.form || c.ids.length === 0) {
+      statusEl.textContent = 'skipped (missing form or ID)';
+      statusEl.className = 'row-status err';
+      continue;
+    }
+    progressText.textContent = 'Saving client ' + (i + 1) + ' of ' + count;
+    statusEl.className = 'row-status pending';
+
+    const baseName = withCode(sanitizeName(c.name), c);
+    const fileCode = codeFor(c);
+    let finalName = baseName;
+    if (usedNames[baseName] !== undefined) {
+      usedNames[baseName]++;
+      finalName = baseName + ' (' + (usedNames[baseName] + 1) + ')';
+    } else {
+      usedNames[baseName] = 0;
+    }
+
+    // Build one ZIP per client: <name>.zip with a <name>/ folder holding the PDFs.
+    const entries = [{ scan: c.form, file: fileCode + '_01.pdf' }];
+    const idNames = idFileNames(c);
+    c.ids.forEach((f, s) => entries.push({ scan: f, file: fileCode + idNames[s] + '.pdf' }));
+    const zipName = finalName + '.zip';
+    async function buildZip(maxDim, quality, attempt) {
+      const zip = new JSZip();
+      const dir = zip.folder(finalName);
+      for (const e of entries) dir.file(e.file, await fileToPdf(e.scan, maxDim, quality, attempt));
+      return await zip.generateAsync({ type: 'uint8array', compression: 'DEFLATE', compressionOptions: { level: 6 } });
+    }
+    const zipArgs = content => ({ title: zipName, base64Content: content, contentMimeType: 'application/zip', disableConversionToGoogleType: true, parentId: getParentId() });
+
+    let allOk = false, savedLocal = false, errMsg = '', lastZip = null;
+    if (fileRoute) {
+      try {
+        statusEl.textContent = 'zipping…';
+        lastZip = await buildZip(2000, 0.82, 0);
+        statusEl.textContent = 'uploading zip…';
+        await mcp.callTool('Google Drive', 'create_file', zipArgs({ $file: { data: new Blob([lastZip], { type: 'application/zip' }), name: 'client.zip', type: 'application/zip' } }), { cache: false });
+        allOk = true;
+      } catch (err) { errMsg = err && err.message ? err.message : 'unknown error'; }
+    }
+    for (let attempt = 0; !allOk && attempt < COMPRESSION_LADDER.length; attempt++) {
+      const { maxDim, quality } = COMPRESSION_LADDER[attempt];
+      statusEl.textContent = attempt === 0 ? 'zipping…' : 'shrinking zip (try ' + (attempt + 1) + ')…';
+      try {
+        lastZip = await buildZip(maxDim, quality, attempt);
+        const b64 = uint8ToBase64(lastZip);
+        if (b64.length > 900000 && attempt < COMPRESSION_LADDER.length - 1) continue;
+        statusEl.textContent = 'uploading zip…';
+        await mcp.callTool('Google Drive', 'create_file', zipArgs(b64), { cache: false });
+        allOk = true;
+      } catch (err) { errMsg = err && err.message ? err.message : 'unknown error'; }
+    }
+    if (!allOk && downloadsCap && lastZip) {
+      try { await downloadsCap.save({ filename: zipName, data: new Blob([lastZip], { type: 'application/zip' }) }); savedLocal = true; } catch (e) {}
+    }
+
+    if (allOk) {
+      statusEl.textContent = 'saved to Drive';
+      statusEl.className = 'row-status ok';
+      doneCount++;
+      driveCount.textContent = 'Zips saved: ' + doneCount;
+      addToTally(1);
+      finished.push(c);
+    } else {
+      statusEl.textContent = savedLocal
+        ? 'zip too big for Drive — saved it to your device instead'
+        : 'failed: ' + errMsg + ' — tap Save again to retry';
+      statusEl.className = 'row-status err';
+    }
+  }
+
+  driveCount.textContent = 'Zips saved: ' + doneCount + ' of ' + count;
+  resetAfterUpload(finished);
+  mergeAllBtn.disabled = clients.length === 0;
+});
+
+// ================= AUTO NAME FROM ID =================
+let autoReading = false;
+let autoRerun = false;
+let sampleCap = null;
+let sampleChecked = false;
+let imagesOk = true;
+let blockingError = '';      // a problem that stops all reading (shown to you)
+const readErrors = new Map(); // client -> short reason
+
+const ERROR_COPY = {
+  not_granted: 'Claude access was declined. Reload the page and tap Allow when asked.',
+  images_unavailable: 'This view can\u2019t send photos to Claude. Open the tool on claude.ai in a browser or the Claude desktop app.',
+  sampling_disabled: 'Claude reading is turned off for this account.',
+  not_declared: 'ID reading is not switched on for this page.',
+  capability_disabled: 'ID reading is not available in this view.',
+  capability_removed: 'Update the Claude app to use ID reading.',
+  session_expired: 'Your Claude session expired. Sign in again, then tap Read name.',
+  rate_limited: 'Too many reads at once. Wait a minute, then tap Read name.'
+};
+const BLOCKING = new Set(['not_granted','images_unavailable','sampling_disabled','not_declared','capability_disabled','capability_removed','session_expired','rate_limited']);
+
+async function getSample() {
+  if (sampleChecked) return sampleCap;
+  sampleChecked = true;
+  sampleCap = await claude.use('sample');
+  if (!sampleCap) { blockingError = 'ID reading only works inside Claude (claude.ai or the Claude app), not in a plain browser tab.'; return null; }
+  try {
+    const lim = await sampleCap.limits();
+    imagesOk = !!(lim && lim.images);
+  } catch (e) { imagesOk = false; }
+  if (!imagesOk) { blockingError = ERROR_COPY.images_unavailable; }
+  return sampleCap;
+}
+
+const NAME_PROMPT =
+  'You are reading a photo of an identity document (most are Philippine IDs: PhilSys/National ID, UMID, ' +
+  'driver\u2019s license, passport, PRC, postal ID, SSS, voter\u2019s ID, TIN, PhilHealth, senior citizen ID). ' +
+  'Find the holder\u2019s printed name. Labels to look for: "Apelyido / Last Name" or "Surname" = surname; ' +
+  '"Mga Pangalan / Given Names" or "First Name" = given name; "Gitnang Apelyido / Middle Name" = middle name. ' +
+  'On a driver\u2019s license the name is often one line: "LAST NAME, FIRST NAME MIDDLE NAME". ' +
+  'Include all given names (e.g. "MARIA CRISTINA"). Keep multi-word surnames whole (e.g. "DELA CRUZ"). ' +
+  'Put suffixes like JR, SR, II, III at the end of the given name, never in the middle name. ' +
+  'Copy spelling and capitalization exactly as printed. ' +
+  'If the photo is the back of an ID or has no name, use empty strings. ' +
+  'Also identify the ID type and give its one-letter code from this list: ' +
+  ID_TYPES.map(t => t[0] + '=' + t[1]).join('; ') + '. ' +
+  'UMID counts as U. If unsure of the type, use an empty string. ' +
+  'Reply with only this JSON: {"surname": "", "givenName": "", "middleName": "", "idType": ""}';
+
+async function readNameFromId(idFile) {
+  const sample = await getSample();
+  if (!sample || !imagesOk) return { name: null, blocking: true };
+  const idJpeg = await compressImageToJpeg(idFile, 1600, 0.85);
+  const idBlob = new Blob([idJpeg], { type: 'image/jpeg' });
+  let lastCode = '';
+  for (const tier of ['quick', 'default']) {
+    try {
+      const r = await sample.json(NAME_PROMPT, { images: idBlob, modelTier: tier });
+      const surname = String((r && r.surname) || '').trim();
+      const given = String((r && (r.givenName || r.firstName)) || '').trim();
+      const middle = String((r && r.middleName) || '').trim();
+      if (surname && given) {
+        const t = String((r && r.idType) || '').trim().toUpperCase();
+        return { name: [given, middle, surname].filter(Boolean).join(' '), idType: ID_CODES.has(t) ? t : '' };
+      }
+      lastCode = 'no_name';
+    } catch (e) {
+      lastCode = (e && e.code) || 'upstream_error';
+      if (BLOCKING.has(lastCode)) {
+        blockingError = ERROR_COPY[lastCode] || ('Reading stopped (' + lastCode + ').');
+        return { name: null, blocking: true };
+      }
+      // invalid_json / empty / refused / upstream: try the stronger model once
+    }
+  }
+  return { name: null, code: lastCode };
+}
+
+// Fill any client name that is empty or still auto-filled from a known ID name.
+function syncAutoNames() {
+  clients.forEach(c => {
+    if (c.name && !c.nameAuto) return;
+    const hit = c.ids.find(f => f.autoName);
+    if (hit) { c.name = hit.autoName; c.nameAuto = true; }
+  });
+}
+
+function fileNeedsRead(c, f) {
+  if (!isImg(f) || f.readTried) return false;
+  const needName = !c.name || (c.nameAuto && !c.ids.some(x => x.autoName));
+  return needName || !f.idTypeManual;
+}
+function clientNeedsRead(c) { return c.ids.some(f => fileNeedsRead(c, f)); }
+
+function setCardNote(c, text) {
+  const i = clients.indexOf(c);
+  const el = document.getElementById('namenote-' + i);
+  if (el) el.textContent = text || '';
+}
+
+function editorOpen() { return editorEl && editorEl.classList.contains('show'); }
+
+async function scheduleAutoRead() {
+  if (autoReading) { autoRerun = true; return; }
+  if (editorOpen()) return;       // wait until the scanner is closed
+  if (true) return; // name reading is off on this version
+  autoReading = true;
+  autoFillBtn.disabled = true;
+  try {
+    while (!editorOpen()) {
+      const c = clients.find(clientNeedsRead);
+      if (!c) break;
+      const left = clients.filter(clientNeedsRead).length;
+      autoFillProgress.textContent = 'Reading names from IDs\u2026 ' + left + ' left';
+      setCardNote(c, 'Reading name from ID\u2026');
+      const f = c.ids.find(x => fileNeedsRead(c, x));
+      f.readTried = true;
+      let res;
+      try { res = await readNameFromId(f); }
+      catch (err) { res = { name: null, code: 'photo_error' }; }
+      if (res.blocking) break;
+      if (res.name) {
+        f.autoName = res.name;
+        readErrors.delete(c);
+        setCardNote(c, '');
+        if (res.idType && !f.idTypeManual) f.idType = res.idType;
+        if (!c.name || (c.nameAuto && !c.ids.some(x => x !== f && x.autoName))) { c.name = res.name; c.nameAuto = true; }
+        setClientNameInDom(c);
+      } else {
+        f.autoNameFailed = true;
+        const why = res.code === 'no_name' ? 'no name found on ID ' + (c.ids.indexOf(f) + 1)
+          : res.code === 'refused' ? 'Claude couldn\u2019t read this photo'
+          : 'reading failed (' + res.code + ')';
+        readErrors.set(c, why);
+        if (!clientNeedsRead(c)) setCardNote(c, why + ' \u2014 retake a clearer photo or tap Read name.');
+      }
+    }
+  } finally {
+    autoReading = false;
+    autoFillBtn.disabled = !clients.some(c => c.ids.length);
+  }
+  if (blockingError) {
+    autoFillProgress.textContent = blockingError;
+  } else if (clients.some(c => c.ids.length)) {
+    const missing = clients.filter(c => c.ids.length && !sanitizeName(c.name || '')).length;
+    autoFillProgress.textContent = missing
+      ? missing + ' name(s) couldn\u2019t be read \u2014 see the note on that client.'
+      : 'Names filled from IDs \u2014 quick check before saving.';
+  }
+  if (autoRerun) { autoRerun = false; scheduleAutoRead(); }
+}
+
+// Manual retry for one client (tap "Read name" on the card).
+function rereadClient(c) {
+  blockingError = '';
+  sampleChecked = false;
+  c.name = ''; c.nameAuto = true;
+  c.ids.forEach(f => { f.autoName = null; f.autoNameFailed = false; f.readTried = false; });
+  readErrors.delete(c);
+  setClientNameInDom(c);
+  scheduleAutoRead();
+}
+
+autoFillBtn.addEventListener('click', () => {
+  blockingError = '';
+  sampleChecked = false;
+  clients.forEach(c => {
+    c.nameAuto = true; c.name = '';
+    c.ids.forEach(f => { f.autoName = null; f.autoNameFailed = false; f.readTried = false; });
+  });
+  readErrors.clear();
+  renderTable();
+  scheduleAutoRead();
+});
+
+// ================= RESET AFTER UPLOAD =================
+function resetAfterUpload(finished) {
+  const readyNote = document.getElementById('readyNote');
+  if (finished.length === 0) {
+    progressText.textContent = 'Nothing was saved. Check the status on each client and try again.';
+    return;
+  }
+  clients = clients.filter(c => !finished.includes(c));
+  autoFillProgress.textContent = '';
+  refreshLists();
+  const left = clients.length;
+  readyNote.textContent = left === 0
+    ? '\u2713 ' + plural(finished.length, 'client zip') + (downloadMode ? ' downloaded to this phone (not Drive yet). Upload it to the Drive folder, or send it via Messenger.' : ' saved. Ready for the next client \u2014 take a new photo.')
+    : '\u2713 ' + finished.length + (downloadMode ? ' downloaded and cleared. ' : ' saved and cleared. ') + plural(left, 'client') + ' still need fixing below.';
+  readyNote.classList.add('show');
+  progressText.textContent = '';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ================= SCAN COUNTER =================
+const TALLY_KEY = 'cfs-tally-v1';
+function todayKey() {
+  const d = new Date();
+  return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+}
+function readTally() {
+  let t = { total: 0, day: todayKey(), today: 0 };
+  try {
+    const raw = localStorage.getItem(TALLY_KEY);
+    if (raw) t = Object.assign(t, JSON.parse(raw));
+  } catch (e) {}
+  if (t.day !== todayKey()) { t.day = todayKey(); t.today = 0; }
+  return t;
+}
+function writeTally(t) {
+  try { localStorage.setItem(TALLY_KEY, JSON.stringify(t)); } catch (e) {}
+}
+function showTally() {
+  const t = readTally();
+  document.getElementById('tallyToday').textContent = t.today;
+  document.getElementById('tallyTotal').textContent = t.total;
+}
+function addToTally(n) {
+  const t = readTally();
+  t.today += n; t.total += n;
+  writeTally(t);
+  showTally();
+}
+document.getElementById('tallyReset').addEventListener('click', async () => {
+  if (!(await askConfirm('Reset the count to zero?', 'Reset'))) return;
+  writeTally({ total: 0, day: todayKey(), today: 0 });
+  showTally();
+});
+showTally();
+let downloadMode = false;
+function plainDownload(blob, name) {
+  const u = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = u; a.download = name; a.rel = 'noopener';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(u), 60000);
+}
+const mcpReady = Promise.resolve(null);
+
+// ================= SCANNER EDITOR =================
+const QUALITY_PRESETS = {
+  small:    { maxDim: 1000, quality: 0.5 },
+  standard: { maxDim: 1400, quality: 0.65 },
+  high:     { maxDim: 2000, quality: 0.82 }
+};
+const EDIT_MAX = 2200;
+
+const editorEl = document.getElementById('editor');
+const edTitle = document.getElementById('edTitle');
+const edBusy = document.getElementById('edBusy');
+const edStage = document.getElementById('edStage');
+const cropWrap = document.getElementById('cropWrap');
+const edCrop = document.getElementById('edCrop');
+const cropPoly = document.getElementById('cropPoly');
+const edPreview = document.getElementById('edPreview');
+const loupe = document.getElementById('loupe');
+const cropControls = document.getElementById('cropControls');
+const enhanceControls = document.getElementById('enhanceControls');
+const handles = Array.from(document.querySelectorAll('.handle'));
+const edBright = document.getElementById('edBright');
+const edContrast = document.getElementById('edContrast');
+
+let ed = null;
+
+function defaultCorners() {
+  const m = 0.04;
+  return [{x:m,y:m},{x:1-m,y:m},{x:1-m,y:1-m},{x:m,y:1-m}];
+}
+function fullCorners() { return [{x:0,y:0},{x:1,y:0},{x:1,y:1},{x:0,y:1}]; }
+
+function loadImageToCanvas(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      let w = img.naturalWidth, h = img.naturalHeight;
+      const s = Math.min(1, EDIT_MAX / Math.max(w, h));
+      w = Math.round(w * s); h = Math.round(h * s);
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      c.getContext('2d').drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      resolve(c);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('could not read image')); };
+    img.src = url;
+  });
+}
+
+function rotateCanvas(src) {
+  const c = document.createElement('canvas');
+  c.width = src.height; c.height = src.width;
+  const ctx = c.getContext('2d');
+  ctx.translate(c.width, 0);
+  ctx.rotate(Math.PI / 2);
+  ctx.drawImage(src, 0, 0);
+  return c;
+}
+
+function scaledCopy(src, maxDim) {
+  const s = Math.min(1, maxDim / Math.max(src.width, src.height));
+  const c = document.createElement('canvas');
+  c.width = Math.max(1, Math.round(src.width * s));
+  c.height = Math.max(1, Math.round(src.height * s));
+  c.getContext('2d').drawImage(src, 0, 0, c.width, c.height);
+  return c;
+}
+
+function fitCanvas(canvas) {
+  const sw = edStage.clientWidth - 36, sh = edStage.clientHeight - 36;
+  const s = Math.min(sw / canvas.width, sh / canvas.height);
+  canvas.style.width = Math.max(1, Math.floor(canvas.width * s)) + 'px';
+  canvas.style.height = Math.max(1, Math.floor(canvas.height * s)) + 'px';
+}
+
+// ---------- Perspective crop ----------
+function warpPerspective(src, corners) {
+  const W0 = src.width, H0 = src.height;
+  const P = corners.map(p => ({ x: p.x * (W0 - 1), y: p.y * (H0 - 1) }));
+  const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+  let outW = Math.round(Math.max(dist(P[0], P[1]), dist(P[3], P[2])));
+  let outH = Math.round(Math.max(dist(P[0], P[3]), dist(P[1], P[2])));
+  const s = Math.min(1, EDIT_MAX / Math.max(outW, outH, 1));
+  outW = Math.max(2, Math.round(outW * s));
+  outH = Math.max(2, Math.round(outH * s));
+
+  const [p0, p1, p2, p3] = P;
+  const dx1 = p1.x - p2.x, dx2 = p3.x - p2.x, dx3 = p0.x - p1.x + p2.x - p3.x;
+  const dy1 = p1.y - p2.y, dy2 = p3.y - p2.y, dy3 = p0.y - p1.y + p2.y - p3.y;
+  const det = dx1 * dy2 - dx2 * dy1;
+  let a, b, c, d, e, f, g, h;
+  if ((Math.abs(dx3) < 1e-6 && Math.abs(dy3) < 1e-6) || Math.abs(det) < 1e-9) {
+    g = 0; h = 0;
+    a = p1.x - p0.x; b = p3.x - p0.x; c = p0.x;
+    d = p1.y - p0.y; e = p3.y - p0.y; f = p0.y;
+  } else {
+    g = (dx3 * dy2 - dx2 * dy3) / det;
+    h = (dx1 * dy3 - dx3 * dy1) / det;
+    a = p1.x - p0.x + g * p1.x; b = p3.x - p0.x + h * p3.x; c = p0.x;
+    d = p1.y - p0.y + g * p1.y; e = p3.y - p0.y + h * p3.y; f = p0.y;
+  }
+
+  const sd = src.getContext('2d').getImageData(0, 0, W0, H0).data;
+  const out = document.createElement('canvas');
+  out.width = outW; out.height = outH;
+  const octx = out.getContext('2d');
+  const od = octx.createImageData(outW, outH);
+  const o = od.data;
+  for (let j = 0; j < outH; j++) {
+    const v = j / (outH - 1);
+    for (let i = 0; i < outW; i++) {
+      const u = i / (outW - 1);
+      const den = g * u + h * v + 1;
+      let x = (a * u + b * v + c) / den;
+      let y = (d * u + e * v + f) / den;
+      if (x < 0) x = 0; else if (x > W0 - 1) x = W0 - 1;
+      if (y < 0) y = 0; else if (y > H0 - 1) y = H0 - 1;
+      const x0 = x | 0, y0 = y | 0;
+      const x1 = x0 + 1 < W0 ? x0 + 1 : x0, y1 = y0 + 1 < H0 ? y0 + 1 : y0;
+      const fx = x - x0, fy = y - y0;
+      const i00 = (y0 * W0 + x0) * 4, i10 = (y0 * W0 + x1) * 4;
+      const i01 = (y1 * W0 + x0) * 4, i11 = (y1 * W0 + x1) * 4;
+      const oi = (j * outW + i) * 4;
+      for (let k = 0; k < 3; k++) {
+        const top = sd[i00 + k] + (sd[i10 + k] - sd[i00 + k]) * fx;
+        const bot = sd[i01 + k] + (sd[i11 + k] - sd[i01 + k]) * fx;
+        o[oi + k] = top + (bot - top) * fy;
+      }
+      o[oi + 3] = 255;
+    }
+  }
+  octx.putImageData(od, 0, 0);
+  return out;
+}
+
+// ---------- Filters ----------
+function localMean(lum, w, h, r) {
+  const W1 = w + 1;
+  const S = new Uint32Array(W1 * (h + 1));
+  for (let y = 0; y < h; y++) {
+    let row = 0;
+    for (let x = 0; x < w; x++) {
+      row += lum[y * w + x];
+      S[(y + 1) * W1 + x + 1] = S[y * W1 + x + 1] + row;
+    }
+  }
+  const m = new Uint8ClampedArray(w * h);
+  for (let y = 0; y < h; y++) {
+    const ya = Math.max(0, y - r), yb = Math.min(h, y + r + 1);
+    for (let x = 0; x < w; x++) {
+      const xa = Math.max(0, x - r), xb = Math.min(w, x + r + 1);
+      const s = S[yb * W1 + xb] - S[ya * W1 + xb] - S[yb * W1 + xa] + S[ya * W1 + xa];
+      m[y * w + x] = s / ((yb - ya) * (xb - xa));
+    }
+  }
+  return m;
+}
+
+function applyFilter(srcCanvas, st) {
+  const w = srcCanvas.width, h = srcCanvas.height, n = w * h;
+  const out = document.createElement('canvas');
+  out.width = w; out.height = h;
+  const ctx = out.getContext('2d');
+  ctx.drawImage(srcCanvas, 0, 0);
+  const br = st.brightness * 1.5;
+  const ct = (100 + st.contrast) / 100;
+  if (st.filter === 'original' && br === 0 && ct === 1) return out;
+
+  const id = ctx.getImageData(0, 0, w, h);
+  const d = id.data;
+  const adj = v => { v = (v - 128) * ct + 128 + br; return v < 0 ? 0 : v > 255 ? 255 : v; };
+
+  if (st.filter === 'original') {
+    for (let p = 0; p < d.length; p += 4) { d[p] = adj(d[p]); d[p+1] = adj(d[p+1]); d[p+2] = adj(d[p+2]); }
+    ctx.putImageData(id, 0, 0);
+    return out;
+  }
+
+  const lum = new Uint8ClampedArray(n);
+  for (let p = 0, q = 0; q < n; p += 4, q++) lum[q] = (d[p] * 77 + d[p+1] * 150 + d[p+2] * 29) >> 8;
+
+  if (st.filter === 'bw') {
+    for (let q = 0; q < n; q++) lum[q] = adj(lum[q]);
+    const r = Math.max(6, Math.round(Math.max(w, h) / 30));
+    const mean = localMean(lum, w, h, r);
+    const t = 0.87 - st.brightness / 300;
+    for (let p = 0, q = 0; q < n; p += 4, q++) {
+      const v = lum[q] < mean[q] * t ? 0 : 255;
+      d[p] = d[p+1] = d[p+2] = v;
+    }
+  } else {
+    // magic / gray: flatten shadows by dividing by the local background
+    const r = Math.max(6, Math.round(Math.max(w, h) / 16));
+    const mean = localMean(lum, w, h, r);
+    const boost = 1.15;
+    for (let p = 0, q = 0; q < n; p += 4, q++) {
+      const sc = 238 / Math.max(mean[q], 12);
+      if (st.filter === 'gray') {
+        let v = lum[q] * sc;
+        v = (v - 128) * boost + 128;
+        v = adj(v);
+        d[p] = d[p+1] = d[p+2] = v;
+      } else {
+        for (let k = 0; k < 3; k++) {
+          let v = d[p + k] * sc;
+          v = (v - 128) * boost + 128;
+          d[p + k] = adj(v);
+        }
+      }
+    }
+  }
+  ctx.putImageData(id, 0, 0);
+  return out;
+}
+
+// ---------- Editor flow ----------
+async function openEditor(ref) {
+  const kind = ref.kind;
+  const file = getRefFile(ref);
+  if (!file || !file.type.startsWith('image/')) return;
+  const base = file.origFile || file;
+  const prev = file.scanState;
+
+  editorEl.classList.add('show');
+  document.body.style.overflow = 'hidden';
+  edTitle.textContent = 'Client ' + (ref.ci + 1) + ' \u00b7 ' + (kind === 'form' ? 'Form' : 'ID ' + (ref.slot + 1) + ' of ' + MAX_IDS);
+  edBusy.textContent = 'Loading\u2026';
+
+  let src;
+  try { src = await loadImageToCanvas(base); }
+  catch (err) { edBusy.textContent = 'Could not open this image.'; return; }
+  const rot = prev ? prev.rot : 0;
+  for (let r = 0; r < rot; r++) src = rotateCanvas(src);
+
+  ed = {
+    kind, ref, base, src, rot,
+    corners: prev ? prev.corners.map(p => ({...p})) : defaultCorners(),
+    filter: prev ? prev.filter : (kind === 'form' ? 'magic' : 'original'),
+    brightness: prev ? prev.brightness : 0,
+    contrast: prev ? prev.contrast : 0,
+    quality: prev ? prev.quality : 'standard',
+    warped: null, warpedSmall: null
+  };
+  edBusy.textContent = '';
+  showCropStep();
+}
+
+function closeEditor() {
+  setTimeout(scheduleAutoRead, 50);
+  editorEl.classList.remove('show');
+  document.body.style.overflow = '';
+  ed = null;
+}
+
+function showCropStep() {
+  cropControls.style.display = '';
+  enhanceControls.style.display = 'none';
+  edPreview.style.display = 'none';
+  cropWrap.style.display = '';
+  const disp = scaledCopy(ed.src, 1200);
+  edCrop.width = disp.width; edCrop.height = disp.height;
+  edCrop.getContext('2d').drawImage(disp, 0, 0);
+  fitCanvas(edCrop);
+  positionHandles();
+}
+
+function positionHandles() {
+  handles.forEach((hd, i) => {
+    hd.style.left = (ed.corners[i].x * 100) + '%';
+    hd.style.top = (ed.corners[i].y * 100) + '%';
+  });
+  cropPoly.setAttribute('points', ed.corners.map(p => p.x + ',' + p.y).join(' '));
+}
+
+function drawLoupe(nx, ny) {
+  const ctx = loupe.getContext('2d');
+  const sx = nx * ed.src.width, sy = ny * ed.src.height;
+  const shownW = parseFloat(edCrop.style.width) || edCrop.width;
+  const srcR = 20 * (ed.src.width / shownW);
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, 120, 120);
+  ctx.drawImage(ed.src, sx - srcR, sy - srcR, srcR * 2, srcR * 2, 0, 0, 120, 120);
+  ctx.strokeStyle = '#5A93BE'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(60, 44); ctx.lineTo(60, 76); ctx.moveTo(44, 60); ctx.lineTo(76, 60); ctx.stroke();
+  // keep loupe away from the finger
+  loupe.style.left = nx < 0.5 ? 'auto' : '12px';
+  loupe.style.right = nx < 0.5 ? '12px' : 'auto';
+}
+
+let dragIdx = -1;
+handles.forEach((hd, i) => {
+  hd.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    hd.setPointerCapture(e.pointerId);
+    dragIdx = i;
+    loupe.style.display = 'block';
+    drawLoupe(ed.corners[i].x, ed.corners[i].y);
+  });
+  hd.addEventListener('pointermove', e => {
+    if (dragIdx !== i || !ed) return;
+    const r = cropWrap.getBoundingClientRect();
+    const x = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+    const y = Math.min(1, Math.max(0, (e.clientY - r.top) / r.height));
+    ed.corners[i] = { x, y };
+    positionHandles();
+    drawLoupe(x, y);
+  });
+  const end = () => { dragIdx = -1; loupe.style.display = 'none'; };
+  hd.addEventListener('pointerup', end);
+  hd.addEventListener('pointercancel', end);
+});
+
+document.getElementById('edRotate').addEventListener('click', () => {
+  if (!ed) return;
+  ed.src = rotateCanvas(ed.src);
+  ed.rot = (ed.rot + 1) % 4;
+  const r = p => ({ x: 1 - p.y, y: p.x });
+  const c = ed.corners;
+  ed.corners = [r(c[3]), r(c[0]), r(c[1]), r(c[2])];
+  showCropStep();
+});
+document.getElementById('edFull').addEventListener('click', () => { if (ed) { ed.corners = fullCorners(); positionHandles(); } });
+document.getElementById('edResetCrop').addEventListener('click', () => { if (ed) { ed.corners = defaultCorners(); positionHandles(); } });
+document.getElementById('edCancel').addEventListener('click', closeEditor);
+
+document.getElementById('edNext').addEventListener('click', () => {
+  if (!ed) return;
+  edBusy.textContent = 'Cropping\u2026';
+  setTimeout(() => {
+    ed.warped = warpPerspective(ed.src, ed.corners);
+    ed.warpedSmall = scaledCopy(ed.warped, 900);
+    edBusy.textContent = '';
+    showEnhanceStep();
+  }, 30);
+});
+
+function syncEnhanceUI() {
+  document.querySelectorAll('#filterRow .chip').forEach(b => b.classList.toggle('on', b.dataset.filter === ed.filter));
+  document.querySelectorAll('#qualityRow .chip').forEach(b => b.classList.toggle('on', b.dataset.q === ed.quality));
+  edBright.value = ed.brightness; edContrast.value = ed.contrast;
+  document.getElementById('edBrightVal').textContent = ed.brightness;
+  document.getElementById('edContrastVal').textContent = ed.contrast;
+}
+
+let previewQueued = false;
+function renderPreview() {
+  if (previewQueued) return;
+  previewQueued = true;
+  requestAnimationFrame(() => {
+    previewQueued = false;
+    if (!ed || !ed.warpedSmall) return;
+    const res = applyFilter(ed.warpedSmall, ed);
+    edPreview.width = res.width; edPreview.height = res.height;
+    edPreview.getContext('2d').drawImage(res, 0, 0);
+    fitCanvas(edPreview);
+  });
+}
+
+function showEnhanceStep() {
+  cropControls.style.display = 'none';
+  enhanceControls.style.display = '';
+  cropWrap.style.display = 'none';
+  edPreview.style.display = '';
+  syncEnhanceUI();
+  renderPreview();
+}
+
+document.querySelectorAll('#filterRow .chip').forEach(b => b.addEventListener('click', () => {
+  ed.filter = b.dataset.filter; syncEnhanceUI(); renderPreview();
+}));
+document.querySelectorAll('#qualityRow .chip').forEach(b => b.addEventListener('click', () => {
+  ed.quality = b.dataset.q; syncEnhanceUI();
+}));
+edBright.addEventListener('input', () => { ed.brightness = +edBright.value; syncEnhanceUI(); renderPreview(); });
+edContrast.addEventListener('input', () => { ed.contrast = +edContrast.value; syncEnhanceUI(); renderPreview(); });
+document.getElementById('edBack').addEventListener('click', showCropStep);
+
+document.getElementById('edSave').addEventListener('click', () => {
+  if (!ed) return;
+  edBusy.textContent = 'Saving\u2026';
+  setTimeout(() => {
+    const final = applyFilter(ed.warped, ed);
+    final.toBlob(blob => {
+      if (!blob || !ed) { edBusy.textContent = 'Save failed \u2014 try again.'; return; }
+      const baseName = (ed.base.name || 'scan').replace(/\.[^.]+$/, '');
+      const f = new File([blob], baseName + '-scan.jpg', { type: 'image/jpeg' });
+      f.origFile = ed.base;
+      f.scanState = {
+        rot: ed.rot, corners: ed.corners.map(p => ({...p})),
+        filter: ed.filter, brightness: ed.brightness, contrast: ed.contrast, quality: ed.quality
+      };
+      f.scanSettings = QUALITY_PRESETS[ed.quality];
+      setRefFile(ed.ref, f);
+      edBusy.textContent = '';
+      closeEditor();
+      refreshLists();
+    }, 'image/jpeg', 0.9);
+  }, 30);
+});
+
+// Retake: replace the photo in the same slot (no duplicate client or file).
+document.getElementById('edRetake').addEventListener('change', e => {
+  const f = e.target.files[0];
+  e.target.value = '';
+  if (!f || !ed) return;
+  const ref = ed.ref;
+  setRefFile(ref, f);            // swap in place
+  ed = null;
+  refreshLists();
+  openEditor(ref);               // reopen the scanner on the new photo
+});
+
+document.getElementById('edRemove').addEventListener('click', async () => {
+  if (!ed) return;
+  if (!(await askConfirm('Remove this photo?', 'Remove'))) return;
+  if (!ed) return;
+  removeRefFile(ed.ref);
+  closeEditor();
+  refreshLists();
+});
+
+window.addEventListener('resize', () => {
+  if (!ed) return;
+  if (cropWrap.style.display !== 'none') fitCanvas(edCrop);
+  else fitCanvas(edPreview);
+});
+</script>
+</body>
+</html>
+
+</body></html>
