@@ -418,11 +418,11 @@
   <header>
     <div class="mode-switch" role="tablist">
       <button id="modeOrc" data-mode="orc">ORC EWB<small>1 ZIP per client</small></button>
-      <button id="modeCb" data-mode="chinabank">China Bank<small>1 PDF per client</small></button>
+      <button id="modeCb" data-mode="chinabank">China Bank<small>1 ZIP per client</small></button>
     </div>
-    <div class="kicker"><span class="orc-only">ONE FOLDER PER CLIENT</span><span class="cb-only">ONE PDF PER CLIENT</span></div>
+    <div class="kicker"><span class="orc-only">ONE FOLDER PER CLIENT</span><span class="cb-only">ONE ZIP PER CLIENT</span></div>
     <h1>Client Folder Scanner</h1>
-    <p class="cb-only">Scan 1 application form and 1 or 2 valid IDs per client. The form and IDs are merged into one PDF, named SURNAME, FIRST NAME MIDDLE NAME, and saved to the CHINABANK TURN INS folder.</p>
+    <p class="cb-only">Scan 1 application form and 1 or 2 valid IDs per client. The form and IDs are merged into one PDF, put in one ZIP named SURNAME, FIRST NAME MIDDLE NAME, and saved to the CHINABANK TURN INS folder.</p>
     <p class="orc-only">Scan 1 application form and 1 valid ID per client. Each client is saved to Google Drive as one ZIP file, named First Name Middle Name Surname_Source Code. The PDFs inside are named by the source code only (e.g. SOURCECODE_01, SOURCECODE_15_C).</p>
     <div class="tally">
       <div class="tally-box"><div class="tally-num" id="tallyToday">0</div><div class="tally-label">CLIENTS TODAY</div></div>
@@ -476,7 +476,7 @@
 
   <section>
     <div class="step-label">STEP 3</div>
-    <h2 id="saveTitle"><span class="orc-only">Save client zips to ORC EWB</span><span class="cb-only">Save client PDFs to China Bank</span></h2>
+    <h2 id="saveTitle"><span class="orc-only">Save client zips to ORC EWB</span><span class="cb-only">Save client zips to China Bank</span></h2>
     <div id="driveBox" hidden><label class="card-sub" for="driveFolder" style="display:block">SAVE TO THIS DRIVE FOLDER (paste the folder link)</label>
     <input type="text" id="driveFolder" placeholder="https://drive.google.com/drive/folders/..." autocomplete="off" style="margin-bottom:6px">
     <p class="hint" style="margin:0 0 4px" id="folderHint">Saving to: <a id="parentLink" href="#" target="_blank" rel="noopener" style="color:var(--action)">open folder</a>. For a client's Drive, ask them to share a folder with your Gmail as Editor, then paste its link here.</p></div>
@@ -775,7 +775,7 @@ function folderPreview(clean, c) {
   if (isCB()) {
     const n = escHtml(cbFileName(clean));
     const warn = clean.indexOf(',') < 0 ? '<br><span style="color:var(--warn);font-weight:400">Add a comma after the surname, e.g. DELA CRUZ, JUAN SANTOS</span>' : '';
-    return '\ud83d\udcc4 ' + n + '.pdf<br><span style="color:var(--ink-soft);font-weight:400">&nbsp;&nbsp;&nbsp;\u2514 form + ' + plural(c ? c.ids.length : 1, 'ID') + ' merged into one PDF</span>' + warn;
+    return '\ud83d\udddc\ufe0f ' + n + '.zip<br><span style="color:var(--ink-soft);font-weight:400">&nbsp;&nbsp;&nbsp;\u2514 ' + n + '.pdf <i>(form + ' + plural(c ? c.ids.length : 1, 'ID') + ' merged)</i></span>' + warn;
   }
   const n = escHtml(withCode(clean, c));
   const k = escHtml(codeFor(c) || n);
@@ -1160,13 +1160,15 @@ mergeAllBtn.addEventListener('click', async () => {
       const entries = [{ scan: c.form, file: fileCode + '_01.pdf' }];
       const idNames = idFileNames(c);
       c.ids.forEach((f, s) => entries.push({ scan: f, file: fileCode + idNames[s] + '.pdf' }));
-      const zipName = finalName + (isCB() ? '.pdf' : '.zip');
+      const zipName = finalName + '.zip';
       let ok = false, err = '';
       try {
         const { maxDim, quality } = COMPRESSION_LADDER[0];
         let blob;
         if (isCB()) {
-          blob = new Blob([await mergeClient(c, maxDim, quality, 0)], { type: 'application/pdf' });
+          const zip = new JSZip();
+          zip.file(finalName + '.pdf', await mergeClient(c, maxDim, quality, 0));
+          blob = new Blob([await zip.generateAsync({ type: 'uint8array', compression: 'DEFLATE', compressionOptions: { level: 6 } })], { type: 'application/zip' });
         } else {
           const zip = new JSZip();
           const dir = zip.folder(finalName);
@@ -1468,7 +1470,7 @@ function resetAfterUpload(finished) {
   refreshLists();
   const left = clients.length;
   readyNote.textContent = left === 0
-    ? '\u2713 ' + plural(finished.length, isCB() ? 'client PDF' : 'client zip') + (downloadMode ? ' downloaded to this phone (not Drive yet). Upload it to the Drive folder, or send it via Messenger.' : ' saved. Ready for the next client \u2014 take a new photo.')
+    ? '\u2713 ' + plural(finished.length, 'client zip') + (downloadMode ? ' downloaded to this phone (not Drive yet). Upload it to the Drive folder, or send it via Messenger.' : ' saved. Ready for the next client \u2014 take a new photo.')
     : '\u2713 ' + finished.length + (downloadMode ? ' downloaded and cleared. ' : ' saved and cleared. ') + plural(left, 'client') + ' still need fixing below.';
   readyNote.classList.add('show');
   progressText.textContent = '';
