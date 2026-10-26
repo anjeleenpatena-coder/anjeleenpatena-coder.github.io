@@ -330,6 +330,13 @@
   }
   .read-btn:hover { background: var(--stamp-bg); }
   .read-btn:not(.del-btn) { display: none; }
+  .mode-switch { display: flex; gap: 0; margin: 0 0 18px; border: 1px solid var(--rule-strong); border-radius: 4px; overflow: hidden; max-width: 420px; }
+  .mode-switch button { flex: 1; border: none; background: var(--paper-raised); color: var(--ink); padding: 10px 8px; font: 600 13.5px var(--font-sans); cursor: pointer; line-height: 1.3; }
+  .mode-switch button small { display: block; font-weight: 400; font-size: 11.5px; color: var(--ink-soft); }
+  .mode-switch button.on { background: var(--action); color: #fff; }
+  .mode-switch button.on small { color: rgba(255,255,255,.85); }
+  body.cb .orc-only { display: none !important; }
+  body:not(.cb) .cb-only { display: none !important; }
   .name-note { font-size: 12.5px; color: var(--warn); margin-top: 4px; }
   .name-note:empty { display: none; }
 
@@ -409,16 +416,21 @@
 <div class="wrap">
 
   <header>
-    <div class="kicker">ONE FOLDER PER CLIENT</div>
+    <div class="mode-switch" role="tablist">
+      <button id="modeOrc" data-mode="orc">ORC EWB<small>1 ZIP per client</small></button>
+      <button id="modeCb" data-mode="chinabank">China Bank<small>1 PDF per client</small></button>
+    </div>
+    <div class="kicker"><span class="orc-only">ONE FOLDER PER CLIENT</span><span class="cb-only">ONE PDF PER CLIENT</span></div>
     <h1>Client Folder Scanner</h1>
-    <p>Scan 1 application form and 1 valid ID per client. Each client is saved to Google Drive as one ZIP file, named First Name Middle Name Surname_Source Code. The PDFs inside are named by the source code only (e.g. SOURCECODE_01, SOURCECODE_15_C).</p>
+    <p class="cb-only">Scan 1 application form and 1 or 2 valid IDs per client. The form and IDs are merged into one PDF, named SURNAME, FIRST NAME MIDDLE NAME, and saved to the CHINABANK TURN INS folder.</p>
+    <p class="orc-only">Scan 1 application form and 1 valid ID per client. Each client is saved to Google Drive as one ZIP file, named First Name Middle Name Surname_Source Code. The PDFs inside are named by the source code only (e.g. SOURCECODE_01, SOURCECODE_15_C).</p>
     <div class="tally">
       <div class="tally-box"><div class="tally-num" id="tallyToday">0</div><div class="tally-label">CLIENTS TODAY</div></div>
       <div class="tally-box"><div class="tally-num" id="tallyTotal">0</div><div class="tally-label">TOTAL CLIENTS</div></div>
       <button class="tally-reset" id="tallyReset">Reset count</button>
     </div>
     <div class="ready-note" id="readyNote"></div>
-    <div id="openBanner" style="margin-top:14px;padding:12px 14px;border-radius:4px;background:var(--ok-bg);color:var(--ink);font-size:14px;line-height:1.5"><b>Saves straight to the ORC EWB Drive folder.</b> Type each client's name from their ID.<br><span style="color:var(--ink-soft)">Diretso po sa ORC EWB folder sa Drive. I-type po ang pangalan ng client mula sa ID.</span></div>
+    <div id="openBanner" style="margin-top:14px;padding:12px 14px;border-radius:4px;background:var(--ok-bg);color:var(--ink);font-size:14px;line-height:1.5"><b>Saves straight to the <span class="orc-only">ORC EWB</span><span class="cb-only">CHINABANK TURN INS</span> Drive folder.</b> Type each client's name from their ID.<br><span style="color:var(--ink-soft)">Diretso po sa <span class="orc-only">ORC EWB</span><span class="cb-only">CHINABANK TURN INS</span> folder sa Drive. I-type po ang pangalan ng client mula sa ID.</span></div>
   </header>
 
   <section>
@@ -451,8 +463,8 @@
   <section>
     <div class="step-label">STEP 2</div>
     <h2>Check each client</h2>
-    <label class="card-sub" for="sourceCode" style="display:block">DEFAULT SOURCE CODE (each client can have their own code — change it on the client's card)</label>
-    <input type="text" id="sourceCode" placeholder="e.g. TOUTORC00CD0007" style="max-width:320px;font-family:var(--font-mono);text-transform:uppercase;margin-bottom:14px" autocomplete="off">
+    <label class="card-sub orc-only" for="sourceCode" style="display:block">DEFAULT SOURCE CODE (each client can have their own code — change it on the client's card)</label>
+    <input type="text" id="sourceCode" class="orc-only" placeholder="e.g. TOUTORC00CD0007" style="max-width:320px;font-family:var(--font-mono);text-transform:uppercase;margin-bottom:14px" autocomplete="off">
     <div class="actions" style="margin-bottom:16px;">
       <button class="primary" id="autoFillBtn" disabled hidden>Re-read all names</button>
       <span class="progress-text" id="autoFillProgress"></span>
@@ -464,7 +476,7 @@
 
   <section>
     <div class="step-label">STEP 3</div>
-    <h2 id="saveTitle">Save client zips to ORC EWB</h2>
+    <h2 id="saveTitle"><span class="orc-only">Save client zips to ORC EWB</span><span class="cb-only">Save client PDFs to China Bank</span></h2>
     <div id="driveBox" hidden><label class="card-sub" for="driveFolder" style="display:block">SAVE TO THIS DRIVE FOLDER (paste the folder link)</label>
     <input type="text" id="driveFolder" placeholder="https://drive.google.com/drive/folders/..." autocomplete="off" style="margin-bottom:6px">
     <p class="hint" style="margin:0 0 4px" id="folderHint">Saving to: <a id="parentLink" href="#" target="_blank" rel="noopener" style="color:var(--action)">open folder</a>. For a client's Drive, ask them to share a folder with your Gmail as Editor, then paste its link here.</p></div>
@@ -472,10 +484,10 @@
       <button class="primary" id="mergeAllBtn" disabled>Save all to Drive</button>
       <span class="progress-text" id="progressText"></span>
     </div>
-    <div class="drive-count" id="driveCount">Zips saved: 0</div>
+    <div class="drive-count" id="driveCount">Files saved: 0</div>
   </section>
 
-  <footer>Scans are processed in this browser tab. Finished ZIPs go straight to the ORC EWB Google Drive folder. Nothing is kept on this website.</footer>
+  <footer>Scans are processed in this browser tab. Finished files go straight to the Google Drive folder. Nothing is kept on this website.</footer>
 </div>
 
 <div class="ask" id="askBox" hidden><div class="ask-card"><p id="askMsg"></p><div class="ask-btns"><button class="ed-btn ghost ask-no" id="askNo">Cancel</button><button class="ed-btn" id="askYes">Yes</button></div></div></div>
@@ -551,6 +563,18 @@ const UPLOAD_KEY = 'VupuPluQYLV-sp8uE1WmHQaH';
 // This page runs outside Claude, so Claude features are switched off.
 window.claude = window.claude || { use: async () => null };
 const claude = window.claude;
+const MODE_KEY = 'cfs-mode-v1';
+let mode = 'orc';
+try {
+  const q = new URLSearchParams(location.search).get('mode');
+  mode = (q === 'chinabank' || q === 'orc') ? q : (localStorage.getItem(MODE_KEY) || 'orc');
+} catch (e) {}
+function isCB() { return mode === 'chinabank'; }
+function applyMode() {
+  document.body.classList.toggle('cb', isCB());
+  document.getElementById('modeOrc').classList.toggle('on', !isCB());
+  document.getElementById('modeCb').classList.toggle('on', isCB());
+}
 const DEFAULT_FOLDER_ID = '1OofQhO3Upb-d9_Jv2tFFQjYFPh2KIkb8'; // "ORC EWB" (client's shared folder)
 const FOLDER_KEY = 'cfs-drive-folder-v1';
 const driveFolderInput = document.getElementById('driveFolder');
@@ -742,8 +766,17 @@ function idFileNames(c) {
     return '_15_' + f.idType + (used[f.idType] > 1 ? '_' + used[f.idType] : '');
   });
 }
+function cbFileName(clean) {
+  // SURNAME, FIRST NAME MIDDLE NAME  (one space after the comma)
+  return clean.replace(/\s*,\s*/g, ', ').replace(/,\s*$/, '').trim();
+}
 function folderPreview(clean, c) {
   if (!clean) return '\u2014';
+  if (isCB()) {
+    const n = escHtml(cbFileName(clean));
+    const warn = clean.indexOf(',') < 0 ? '<br><span style="color:var(--warn);font-weight:400">Add a comma after the surname, e.g. DELA CRUZ, JUAN SANTOS</span>' : '';
+    return '\ud83d\udcc4 ' + n + '.pdf<br><span style="color:var(--ink-soft);font-weight:400">&nbsp;&nbsp;&nbsp;\u2514 form + ' + plural(c ? c.ids.length : 1, 'ID') + ' merged into one PDF</span>' + warn;
+  }
   const n = escHtml(withCode(clean, c));
   const k = escHtml(codeFor(c) || n);
   const names = c ? idFileNames(c) : [];
@@ -818,12 +851,12 @@ function renderTable() {
         '<button class="read-btn del-btn" data-ci="' + i + '" title="Delete this client">Delete</button></span></div>' +
         '<div class="card-files">' +
           '<div><div class="card-sub">FORM</div><div class="card-thumbs">' + formThumb + '</div></div>' +
-          '<div><div class="card-sub">VALID ID (' + c.ids.length + '/' + MAX_IDS + ')</div><div class="card-thumbs">' + idThumbs + '</div>' + c.ids.map((f, s) => '<div>' + idTypeSelect(f, i, s) + '</div>').join('') + '</div>' +
+          '<div><div class="card-sub">VALID ID (' + c.ids.length + '/' + MAX_IDS + ')</div><div class="card-thumbs">' + idThumbs + '</div>' + c.ids.map((f, s) => '<div class="orc-only">' + idTypeSelect(f, i, s) + '</div>').join('') + '</div>' +
         '</div>' +
-        '<label class="card-sub" style="display:block">SOURCE CODE FOR THIS CLIENT</label>' +
-        '<input type="text" class="codeInput" data-ci="' + i + '" placeholder="' + escHtml(getSourceCode() || 'e.g. TOUTORC00C00006') + '" value="' + escHtml(c.code || '') + '" autocomplete="off" style="max-width:320px;font-family:var(--font-mono);text-transform:uppercase;margin-bottom:8px">' +
-        '<label class="card-sub" style="display:block">CLIENT NAME</label>' +
-        '<input type="text" class="nameInput" data-ci="' + i + '" placeholder="First Name Middle Name Surname" value="' + (c.name || '').replace(/"/g, '&quot;') + '">' +
+        '<label class="card-sub orc-only" style="display:block">SOURCE CODE FOR THIS CLIENT</label>' +
+        '<input type="text" class="codeInput orc-only" data-ci="' + i + '" placeholder="' + escHtml(getSourceCode() || 'e.g. TOUTORC00C00006') + '" value="' + escHtml(c.code || '') + '" autocomplete="off" style="max-width:320px;font-family:var(--font-mono);text-transform:uppercase;margin-bottom:8px">' +
+        '<label class="card-sub" style="display:block">' + (isCB() ? 'CLIENT NAME \u2014 SURNAME, FIRST NAME MIDDLE NAME' : 'CLIENT NAME') + '</label>' +
+        '<input type="text" class="nameInput" data-ci="' + i + '" placeholder="' + (isCB() ? 'DELA CRUZ, JUAN SANTOS' : 'First Name Middle Name Surname') + '" value="' + (c.name || '').replace(/"/g, '&quot;') + '">' +
         '<div class="name-row"><div class="fname preview" id="preview-' + i + '">' + folderPreview(clean, c) + '</div>' +
         (c.ids.some(isImg) ? '<button class="read-btn" data-ci="' + i + '">Read name</button>' : '') + '</div>' +
         '<div class="name-note" id="namenote-' + i + '">' + (readErrors.get(c) && !c.name ? readErrors.get(c) + ' \u2014 retake a clearer photo or tap Read name.' : '') + '</div>' +
@@ -1056,10 +1089,10 @@ async function uploadScanPdf(mcp, fileRoute, scan, folderId, fileName, statusEl,
   return { ok: false, err: lastErr, bytes: lastBytes };
 }
 
-async function uploadZip(blob, name) {
+async function uploadZip(blob, name, target) {
   if (!/^https:\/\/script\.google\.com\//.test(UPLOAD_URL)) throw new Error('uploader link not set yet');
   const b64 = uint8ToBase64(new Uint8Array(await blob.arrayBuffer()));
-  const res = await fetch(UPLOAD_URL, { method: 'POST', body: JSON.stringify({ key: UPLOAD_KEY, name, data: b64 }) });
+  const res = await fetch(UPLOAD_URL, { method: 'POST', body: JSON.stringify({ key: UPLOAD_KEY, target: target || 'orc', name, data: b64 }) });
   let out = null;
   try { out = await res.json(); } catch (e) {}
   if (!out || !out.ok) throw new Error((out && out.error) || 'upload failed (' + res.status + ')');
@@ -1075,7 +1108,11 @@ mergeAllBtn.addEventListener('click', async () => {
     notify('Type a name for every client before saving.');
     return;
   }
-  if (clients.some(c => c.ids.some(f => !f.idType))) {
+  if (isCB() && clients.some(c => (c.name || '').indexOf(',') < 0)) {
+    notify('Type each name as SURNAME, FIRST NAME MIDDLE NAME (with a comma).');
+    return;
+  }
+  if (!isCB() && clients.some(c => c.ids.some(f => !f.idType))) {
     notify('Pick the ID type for every client before saving.');
     return;
   }
@@ -1085,7 +1122,7 @@ mergeAllBtn.addEventListener('click', async () => {
     driveFolderInput.focus();
     return;
   }
-  if (clients.some(c => !codeFor(c))) {
+  if (!isCB() && clients.some(c => !codeFor(c))) {
     notify('Type a source code for every client first (Step 2).');
     sourceCodeInput.focus();
     return;
@@ -1098,12 +1135,12 @@ mergeAllBtn.addEventListener('click', async () => {
   const usedNames = {};
   const finished = [];
   let doneCount = 0;
-  driveCount.textContent = 'Zips saved: 0';
+  driveCount.textContent = 'Files saved: 0';
 
   const mcp = await claude.use('mcp');
   const downloadsCap = await claude.use('downloads');
   if (!mcp) {
-    driveCount.textContent = 'Zips saved: 0';
+    driveCount.textContent = 'Files saved: 0';
     for (let i = 0; i < count; i++) {
       const c = batch[i];
       const statusEl = document.getElementById('status-' + i);
@@ -1114,8 +1151,8 @@ mergeAllBtn.addEventListener('click', async () => {
       }
       progressText.textContent = 'Saving client ' + (i + 1) + ' of ' + count;
       statusEl.className = 'row-status pending';
-      statusEl.textContent = 'zipping…';
-      const baseName = withCode(sanitizeName(c.name), c);
+      statusEl.textContent = isCB() ? 'merging PDF…' : 'zipping…';
+      const baseName = isCB() ? cbFileName(sanitizeName(c.name)) : withCode(sanitizeName(c.name), c);
       const fileCode = codeFor(c);
       let finalName = baseName;
       if (usedNames[baseName] !== undefined) { usedNames[baseName]++; finalName = baseName + ' (' + (usedNames[baseName] + 1) + ')'; }
@@ -1123,26 +1160,31 @@ mergeAllBtn.addEventListener('click', async () => {
       const entries = [{ scan: c.form, file: fileCode + '_01.pdf' }];
       const idNames = idFileNames(c);
       c.ids.forEach((f, s) => entries.push({ scan: f, file: fileCode + idNames[s] + '.pdf' }));
-      const zipName = finalName + '.zip';
+      const zipName = finalName + (isCB() ? '.pdf' : '.zip');
       let ok = false, err = '';
       try {
         const { maxDim, quality } = COMPRESSION_LADDER[0];
-        const zip = new JSZip();
-        const dir = zip.folder(finalName);
-        for (const e of entries) dir.file(e.file, await fileToPdf(e.scan, maxDim, quality, 0));
-        const blob = new Blob([await zip.generateAsync({ type: 'uint8array', compression: 'DEFLATE', compressionOptions: { level: 6 } })], { type: 'application/zip' });
+        let blob;
+        if (isCB()) {
+          blob = new Blob([await mergeClient(c, maxDim, quality, 0)], { type: 'application/pdf' });
+        } else {
+          const zip = new JSZip();
+          const dir = zip.folder(finalName);
+          for (const e of entries) dir.file(e.file, await fileToPdf(e.scan, maxDim, quality, 0));
+          blob = new Blob([await zip.generateAsync({ type: 'uint8array', compression: 'DEFLATE', compressionOptions: { level: 6 } })], { type: 'application/zip' });
+        }
         statusEl.textContent = 'uploading to Drive…';
-        try { await uploadZip(blob, zipName); ok = true; }
+        try { await uploadZip(blob, zipName, mode); ok = true; }
         catch (e) {
           err = e && e.message ? e.message : 'upload failed';
           try { plainDownload(blob, zipName); err += ' — saved to this phone instead'; } catch (e2) {}
         }
       } catch (e) { err = e && e.message ? e.message : 'unknown error'; }
       if (ok) {
-        statusEl.textContent = 'saved to ORC EWB';
+        statusEl.textContent = isCB() ? 'saved to CHINABANK TURN INS' : 'saved to ORC EWB';
         statusEl.className = 'row-status ok';
         doneCount++;
-        driveCount.textContent = 'Zips saved: ' + doneCount;
+        driveCount.textContent = 'Files saved: ' + doneCount;
         addToTally(1);
         finished.push(c);
       } else {
@@ -1150,8 +1192,8 @@ mergeAllBtn.addEventListener('click', async () => {
         statusEl.className = 'row-status err';
       }
     }
-    progressText.textContent = doneCount ? 'Done. Check the ORC EWB folder in Google Drive.' : '';
-    driveCount.textContent = 'Zips saved: ' + doneCount + ' of ' + count;
+    progressText.textContent = doneCount ? 'Done. Check the ' + (isCB() ? 'CHINABANK TURN INS' : 'ORC EWB') + ' folder in Google Drive.' : '';
+    driveCount.textContent = 'Files saved: ' + doneCount + ' of ' + count;
     resetAfterUpload(finished);
     mergeAllBtn.disabled = clients.length === 0;
     return;
@@ -1223,7 +1265,7 @@ mergeAllBtn.addEventListener('click', async () => {
       statusEl.textContent = 'saved to Drive';
       statusEl.className = 'row-status ok';
       doneCount++;
-      driveCount.textContent = 'Zips saved: ' + doneCount;
+      driveCount.textContent = 'Files saved: ' + doneCount;
       addToTally(1);
       finished.push(c);
     } else {
@@ -1234,7 +1276,7 @@ mergeAllBtn.addEventListener('click', async () => {
     }
   }
 
-  driveCount.textContent = 'Zips saved: ' + doneCount + ' of ' + count;
+  driveCount.textContent = 'Files saved: ' + doneCount + ' of ' + count;
   resetAfterUpload(finished);
   mergeAllBtn.disabled = clients.length === 0;
 });
@@ -1426,7 +1468,7 @@ function resetAfterUpload(finished) {
   refreshLists();
   const left = clients.length;
   readyNote.textContent = left === 0
-    ? '\u2713 ' + plural(finished.length, 'client zip') + (downloadMode ? ' downloaded to this phone (not Drive yet). Upload it to the Drive folder, or send it via Messenger.' : ' saved. Ready for the next client \u2014 take a new photo.')
+    ? '\u2713 ' + plural(finished.length, isCB() ? 'client PDF' : 'client zip') + (downloadMode ? ' downloaded to this phone (not Drive yet). Upload it to the Drive folder, or send it via Messenger.' : ' saved. Ready for the next client \u2014 take a new photo.')
     : '\u2713 ' + finished.length + (downloadMode ? ' downloaded and cleared. ' : ' saved and cleared. ') + plural(left, 'client') + ' still need fixing below.';
   readyNote.classList.add('show');
   progressText.textContent = '';
@@ -1468,6 +1510,14 @@ document.getElementById('tallyReset').addEventListener('click', async () => {
   showTally();
 });
 showTally();
+document.querySelectorAll('.mode-switch button').forEach(b => b.addEventListener('click', () => {
+  if (b.dataset.mode === mode) return;
+  mode = b.dataset.mode;
+  try { localStorage.setItem(MODE_KEY, mode); } catch (e) {}
+  applyMode();
+  renderTable();
+}));
+applyMode();
 let downloadMode = false;
 function plainDownload(blob, name) {
   const u = URL.createObjectURL(blob);
