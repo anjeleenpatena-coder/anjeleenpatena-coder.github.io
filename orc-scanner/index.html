@@ -423,14 +423,14 @@
     <div class="kicker"><span class="orc-only">ONE FOLDER PER CLIENT</span><span class="cb-only">ONE ZIP PER CLIENT</span></div>
     <h1>Client Folder Scanner</h1>
     <p class="cb-only">Scan 1 application form and 1 or 2 valid IDs per client. The form and IDs are merged into one PDF, put in one ZIP named SURNAME, FIRST NAME MIDDLE NAME, and saved to the CHINABANK TURN INS folder.</p>
-    <p class="orc-only">Scan 1 application form and 1 valid ID per client. Each client is saved to Google Drive as one ZIP file, named First Name Middle Name Surname_Source Code. The PDFs inside are named by the source code only (e.g. SOURCECODE_01, SOURCECODE_15_C).</p>
+    <p class="orc-only">Scan 1 application form and 1 valid ID per client. Each client is saved to Google Drive as one ZIP file, named exactly as typed in the source code box (e.g. JUAN SANTOS DELA CRUZ_SOURCECODE). The PDFs inside are named by the source code only (e.g. SOURCECODE_01, SOURCECODE_15_C).</p>
     <div class="tally">
       <div class="tally-box"><div class="tally-num" id="tallyToday">0</div><div class="tally-label">CLIENTS TODAY</div></div>
       <div class="tally-box"><div class="tally-num" id="tallyTotal">0</div><div class="tally-label">TOTAL CLIENTS</div></div>
       <button class="tally-reset" id="tallyReset">Reset count</button>
     </div>
     <div class="ready-note" id="readyNote"></div>
-    <div id="openBanner" style="margin-top:14px;padding:12px 14px;border-radius:4px;background:var(--ok-bg);color:var(--ink);font-size:14px;line-height:1.5"><b>Saves straight to the <span class="orc-only">ORC EWB</span><span class="cb-only">CHINABANK TURN INS</span> Drive folder.</b> Type each client's name from their ID.<br><span style="color:var(--ink-soft)">Diretso po sa <span class="orc-only">ORC EWB</span><span class="cb-only">CHINABANK TURN INS</span> folder sa Drive. I-type po ang pangalan ng client mula sa ID.</span></div>
+    <div id="openBanner" style="margin-top:14px;padding:12px 14px;border-radius:4px;background:var(--ok-bg);color:var(--ink);font-size:14px;line-height:1.5"><b>Saves straight to the <span class="orc-only">ORC EWB</span><span class="cb-only">CHINABANK TURN INS</span> Drive folder.</b> <span class="cb-only">Type each client's name from their ID.</span><span class="orc-only">Type each client's source code (name first, then _ and the code).</span><br><span style="color:var(--ink-soft)">Diretso po sa <span class="orc-only">ORC EWB</span><span class="cb-only">CHINABANK TURN INS</span> folder sa Drive. <span class="cb-only">I-type po ang pangalan ng client mula sa ID.</span><span class="orc-only">I-type lang po ang source code ng client (pwede may name sa unahan).</span></span></div>
   </header>
 
   <section>
@@ -464,7 +464,7 @@
     <div class="step-label">STEP 2</div>
     <h2>Check each client</h2>
     <label class="card-sub orc-only" for="sourceCode" style="display:block">DEFAULT SOURCE CODE (each client can have their own code — change it on the client's card)</label>
-    <input type="text" id="sourceCode" class="orc-only" placeholder="e.g. TOUTORC00CD0007" style="max-width:320px;font-family:var(--font-mono);text-transform:uppercase;margin-bottom:14px" autocomplete="off">
+    <input type="text" id="sourceCode" class="orc-only" placeholder="e.g. TOUTORC00CD0007" style="max-width:100%;font-family:var(--font-mono);text-transform:uppercase;margin-bottom:14px" autocomplete="off">
     <div class="actions" style="margin-bottom:16px;">
       <button class="primary" id="autoFillBtn" disabled hidden>Re-read all names</button>
       <span class="progress-text" id="autoFillProgress"></span>
@@ -719,11 +719,21 @@ setupDrop(dropIds, [idInput, idCamera], (files, input) => {
 function escHtml(t) { return String(t).replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch])); }
 const SRC_KEY = 'cfs-source-code-v1';
 const sourceCodeInput = document.getElementById('sourceCode');
-function getSourceCode() { return sanitizeName(sourceCodeInput.value || '').replace(/\s+/g, '').toUpperCase(); }
+// "JUAN SANTOS DELA CRUZ_TOUTORC00C00006" -> keeps spaces in the name part, removes spaces in the code part.
+function normCode(t) {
+  const v = sanitizeName(t || '').toUpperCase();
+  const k = v.lastIndexOf('_');
+  if (k < 0) return v.replace(/\s+/g, '');
+  const namePart = v.slice(0, k).replace(/_+$/, '').trim();
+  const codePart = v.slice(k + 1).replace(/\s+/g, '');
+  return namePart ? namePart + '_' + codePart : codePart;
+}
+function getSourceCode() { return normCode(sourceCodeInput.value); }
 try { sourceCodeInput.value = localStorage.getItem(SRC_KEY) || 'TOUTORC00CD0007'; } catch (e) { sourceCodeInput.value = 'TOUTORC00CD0007'; }
 sourceCodeInput.addEventListener('input', () => {
   try { localStorage.setItem(SRC_KEY, getSourceCode()); } catch (e) {}
   document.querySelectorAll('.codeInput').forEach(el => { el.placeholder = getSourceCode() || 'e.g. TOUTORC00C00006'; });
+  clients.forEach(refreshPreview);
   clients.forEach(refreshPreview);
 });
 const ID_TYPES = [
@@ -746,9 +756,13 @@ function refreshPreview(c) {
   if (el) el.innerHTML = folderPreview(sanitizeName(c.name || ''), c);
   c.ids.forEach((f, s) => { const sel = document.getElementById('idtype-' + i + '-' + s); if (sel) sel.value = f.idType || ''; });
 }
-function cleanCode(t) { return sanitizeName(t || '').replace(/\s+/g, '').toUpperCase(); }
-function codeFor(c) { return (c && cleanCode(c.code)) || getSourceCode(); }
+function cleanCode(t) { return normCode(t); }
+// Full text typed in the source code box (may include the client name).
+function fullCodeFor(c) { return (c && normCode(c.code)) || getSourceCode(); }
+// Source code only (part after the last "_") — used for the PDF names inside the zip.
+function codeFor(c) { const f = fullCodeFor(c); const k = f.lastIndexOf('_'); return k < 0 ? f : f.slice(k + 1); }
 function withCode(clean, c) {
+  if (!isCB()) return fullCodeFor(c);
   const code = codeFor(c);
   if (!code) return clean;
   // If the source code was already typed in the name box, don't add it twice.
@@ -771,7 +785,8 @@ function cbFileName(clean) {
   return clean.replace(/\s*,\s*/g, ', ').replace(/,\s*$/, '').trim();
 }
 function folderPreview(clean, c) {
-  if (!clean) return '\u2014';
+  if (!isCB() && c && !codeFor(c)) return '\u2014';
+  if (isCB() && !clean) return '\u2014';
   if (isCB()) {
     const n = escHtml(cbFileName(clean));
     const warn = clean.indexOf(',') < 0 ? '<br><span style="color:var(--warn);font-weight:400">Add a comma after the surname, e.g. DELA CRUZ, JUAN SANTOS</span>' : '';
@@ -853,12 +868,12 @@ function renderTable() {
           '<div><div class="card-sub">FORM</div><div class="card-thumbs">' + formThumb + '</div></div>' +
           '<div><div class="card-sub">VALID ID (' + c.ids.length + '/' + MAX_IDS + ')</div><div class="card-thumbs">' + idThumbs + '</div>' + c.ids.map((f, s) => '<div class="orc-only">' + idTypeSelect(f, i, s) + '</div>').join('') + '</div>' +
         '</div>' +
-        '<label class="card-sub orc-only" style="display:block">SOURCE CODE FOR THIS CLIENT</label>' +
-        '<input type="text" class="codeInput orc-only" data-ci="' + i + '" placeholder="' + escHtml(getSourceCode() || 'e.g. TOUTORC00C00006') + '" value="' + escHtml(c.code || '') + '" autocomplete="off" style="max-width:320px;font-family:var(--font-mono);text-transform:uppercase;margin-bottom:8px">' +
-        '<label class="card-sub" style="display:block">' + (isCB() ? 'CLIENT NAME \u2014 SURNAME, FIRST NAME MIDDLE NAME' : 'CLIENT NAME') + '</label>' +
-        '<input type="text" class="nameInput" data-ci="' + i + '" placeholder="' + (isCB() ? 'DELA CRUZ, JUAN SANTOS' : 'First Name Middle Name Surname') + '" value="' + (c.name || '').replace(/"/g, '&quot;') + '">' +
+        '<label class="card-sub orc-only" style="display:block">SOURCE CODE FOR THIS CLIENT (pwede po ilagay ang name sa unahan, e.g. JUAN SANTOS DELA CRUZ_TOUTORC00C00006)</label>' +
+        '<input type="text" class="codeInput orc-only" data-ci="' + i + '" placeholder="' + escHtml(getSourceCode() || 'e.g. TOUTORC00C00006') + '" value="' + escHtml(c.code || '') + '" autocomplete="off" style="max-width:100%;font-family:var(--font-mono);text-transform:uppercase;margin-bottom:8px">' +
+        '<label class="card-sub cb-only" style="display:block">' + (isCB() ? 'CLIENT NAME \u2014 SURNAME, FIRST NAME MIDDLE NAME' : 'CLIENT NAME') + '</label>' +
+        '<input type="text" class="nameInput cb-only" data-ci="' + i + '" placeholder="' + (isCB() ? 'DELA CRUZ, JUAN SANTOS' : 'First Name Middle Name Surname') + '" value="' + (c.name || '').replace(/"/g, '&quot;') + '">' +
         '<div class="name-row"><div class="fname preview" id="preview-' + i + '">' + folderPreview(clean, c) + '</div>' +
-        (c.ids.some(isImg) ? '<button class="read-btn" data-ci="' + i + '">Read name</button>' : '') + '</div>' +
+        (c.ids.some(isImg) ? '<button class="read-btn cb-only" data-ci="' + i + '">Read name</button>' : '') + '</div>' +
         '<div class="name-note" id="namenote-' + i + '">' + (readErrors.get(c) && !c.name ? readErrors.get(c) + ' \u2014 retake a clearer photo or tap Read name.' : '') + '</div>' +
       '</div>';
   });
@@ -1104,7 +1119,7 @@ mergeAllBtn.addEventListener('click', async () => {
     notify('Still reading names from the IDs. Wait a few seconds, then tap Save again.');
     return;
   }
-  if (clients.some(c => !sanitizeName(c.name || ''))) {
+  if (isCB() && clients.some(c => !sanitizeName(c.name || ''))) {
     notify('Type a name for every client before saving.');
     return;
   }
