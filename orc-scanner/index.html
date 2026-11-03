@@ -423,7 +423,7 @@
     <div class="kicker"><span class="orc-only">ONE FOLDER PER CLIENT</span><span class="cb-only">ONE ZIP PER CLIENT</span></div>
     <h1>Client Folder Scanner</h1>
     <p class="cb-only">Scan 1 application form and 1 or 2 valid IDs per client. The form and IDs are merged into one PDF, put in one ZIP named SURNAME, FIRST NAME MIDDLE NAME, and saved to the CHINABANK TURN INS folder.</p>
-    <p class="orc-only">Scan 1 application form and 1 valid ID per client. Each client is saved to Google Drive as one ZIP file, named exactly as typed in the source code box (e.g. JUAN SANTOS DELA CRUZ_SOURCECODE). The PDFs inside are named by the source code only (e.g. SOURCECODE_01, SOURCECODE_15_C).</p>
+    <p class="orc-only">Scan 1 application form and 1 valid ID per client. Each client is saved to Google Drive as one ZIP file, named exactly as typed in the source code box (e.g. JUAN SANTOS DELA CRUZ_SOURCECODE). The PDFs inside use the same name (e.g. JUAN SANTOS DELA CRUZ_SOURCECODE_01, JUAN SANTOS DELA CRUZ_SOURCECODE_15_C).</p>
     <div class="tally">
       <div class="tally-box"><div class="tally-num" id="tallyToday">0</div><div class="tally-label">CLIENTS TODAY</div></div>
       <div class="tally-box"><div class="tally-num" id="tallyTotal">0</div><div class="tally-label">TOTAL CLIENTS</div></div>
@@ -759,7 +759,7 @@ function refreshPreview(c) {
 function cleanCode(t) { return normCode(t); }
 // Full text typed in the source code box (may include the client name).
 function fullCodeFor(c) { return (c && normCode(c.code)) || getSourceCode(); }
-// Source code only (part after the last "_") — used for the PDF names inside the zip.
+// Source code only (part after the last "_").
 function codeFor(c) { const f = fullCodeFor(c); const k = f.lastIndexOf('_'); return k < 0 ? f : f.slice(k + 1); }
 function withCode(clean, c) {
   if (!isCB()) return fullCodeFor(c);
@@ -793,7 +793,7 @@ function folderPreview(clean, c) {
     return '\ud83d\udddc\ufe0f ' + n + '.zip<br><span style="color:var(--ink-soft);font-weight:400">&nbsp;&nbsp;&nbsp;\u2514 ' + n + '.pdf <i>(form + ' + plural(c ? c.ids.length : 1, 'ID') + ' merged)</i></span>' + warn;
   }
   const n = escHtml(withCode(clean, c));
-  const k = escHtml(codeFor(c) || n);
+  const k = escHtml(fullCodeFor(c) || n);
   const names = c ? idFileNames(c) : [];
   const idLines = (c ? c.ids : []).map((f, s) => '<br>&nbsp;&nbsp;&nbsp;\u2514 ' + (names[s] ? k + names[s] + '.pdf' : '<span style="color:var(--warn)">pick the type for ID ' + (s + 1) + '</span>') + ' <i>(ID ' + (s + 1) + ')</i>').join('');
   return '\ud83d\udddc\ufe0f ' + n + '.zip<br>\u2514 \ud83d\udcc1 ' + n + '<br><span style="color:var(--ink-soft);font-weight:400">&nbsp;&nbsp;&nbsp;\u2514 ' + k + '_01.pdf <i>(application form)</i>' + idLines + '</span>';
@@ -1168,7 +1168,7 @@ mergeAllBtn.addEventListener('click', async () => {
       statusEl.className = 'row-status pending';
       statusEl.textContent = isCB() ? 'merging PDF…' : 'zipping…';
       const baseName = isCB() ? cbFileName(sanitizeName(c.name)) : withCode(sanitizeName(c.name), c);
-      const fileCode = codeFor(c);
+      const fileCode = fullCodeFor(c);
       let finalName = baseName;
       if (usedNames[baseName] !== undefined) { usedNames[baseName]++; finalName = baseName + ' (' + (usedNames[baseName] + 1) + ')'; }
       else usedNames[baseName] = 0;
@@ -1230,7 +1230,7 @@ mergeAllBtn.addEventListener('click', async () => {
     statusEl.className = 'row-status pending';
 
     const baseName = withCode(sanitizeName(c.name), c);
-    const fileCode = codeFor(c);
+    const fileCode = fullCodeFor(c);
     let finalName = baseName;
     if (usedNames[baseName] !== undefined) {
       usedNames[baseName]++;
