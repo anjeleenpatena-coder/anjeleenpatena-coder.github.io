@@ -422,7 +422,7 @@
     </div>
     <div class="kicker"><span class="orc-only">ONE FOLDER PER CLIENT</span><span class="cb-only">ONE ZIP PER CLIENT</span></div>
     <h1>Client Folder Scanner</h1>
-    <p class="cb-only">Scan 1 application form and 1 or 2 valid IDs per client. The form and IDs are merged into one PDF, put in one ZIP named SURNAME, FIRST NAME MIDDLE NAME, and saved to the CHINABANK TURN INS folder.</p>
+    <p class="cb-only">Scan 1 application form and 1 or 2 valid IDs per client. The form and IDs are merged into one PDF, put in one ZIP named SurnameFirstNameMiddleInitial with no spaces (e.g. DelaCruzClarisseJaneS), and saved to the CHINABANK TURN INS folder.</p>
     <p class="orc-only">Scan 1 application form and 1 valid ID per client. Each client is saved to Google Drive as one ZIP file, named exactly as typed in the source code box (e.g. JUAN SANTOS DELA CRUZ_SOURCECODE). The PDFs inside use the same name (e.g. JUAN SANTOS DELA CRUZ_SOURCECODE_01, JUAN SANTOS DELA CRUZ_SOURCECODE_15_C).</p>
     <div class="tally">
       <div class="tally-box"><div class="tally-num" id="tallyToday">0</div><div class="tally-label">CLIENTS TODAY</div></div>
@@ -781,15 +781,19 @@ function idFileNames(c) {
   });
 }
 function cbFileName(clean) {
-  // SURNAME, FIRST NAME MIDDLE NAME  (one space after the comma)
-  return clean.replace(/\s*,\s*/g, ', ').replace(/,\s*$/, '').trim();
+  // China Bank format: SurnameFirstNameMiddleInitial, no spaces or commas.
+  // "DELA CRUZ CLARISSE JANE S" or "Dela Cruz, Clarisse Jane S." -> DelaCruzClarisseJaneS
+  return clean.split(/[\s,.]+/).filter(Boolean).map(w => {
+    const mixed = w !== w.toUpperCase() && w !== w.toLowerCase();
+    return mixed ? w.charAt(0).toUpperCase() + w.slice(1) : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+  }).join('');
 }
 function folderPreview(clean, c) {
   if (!isCB() && c && !codeFor(c)) return '\u2014';
   if (isCB() && !clean) return '\u2014';
   if (isCB()) {
     const n = escHtml(cbFileName(clean));
-    const warn = clean.indexOf(',') < 0 ? '<br><span style="color:var(--warn);font-weight:400">Add a comma after the surname, e.g. DELA CRUZ, JUAN SANTOS</span>' : '';
+    const warn = '';
     return '\ud83d\udddc\ufe0f ' + n + '.zip<br><span style="color:var(--ink-soft);font-weight:400">&nbsp;&nbsp;&nbsp;\u2514 ' + n + '.pdf <i>(form + ' + plural(c ? c.ids.length : 1, 'ID') + ' merged)</i></span>' + warn;
   }
   const n = escHtml(withCode(clean, c));
@@ -870,8 +874,8 @@ function renderTable() {
         '</div>' +
         '<label class="card-sub orc-only" style="display:block">SOURCE CODE FOR THIS CLIENT (pwede po ilagay ang name sa unahan, e.g. JUAN SANTOS DELA CRUZ_TOUTORC00C00006)</label>' +
         '<input type="text" class="codeInput orc-only" data-ci="' + i + '" placeholder="' + escHtml(getSourceCode() || 'e.g. TOUTORC00C00006') + '" value="' + escHtml(c.code || '') + '" autocomplete="off" style="max-width:100%;font-family:var(--font-mono);text-transform:uppercase;margin-bottom:8px">' +
-        '<label class="card-sub cb-only" style="display:block">' + (isCB() ? 'CLIENT NAME \u2014 SURNAME, FIRST NAME MIDDLE NAME' : 'CLIENT NAME') + '</label>' +
-        '<input type="text" class="nameInput cb-only" data-ci="' + i + '" placeholder="' + (isCB() ? 'DELA CRUZ, JUAN SANTOS' : 'First Name Middle Name Surname') + '" value="' + (c.name || '').replace(/"/g, '&quot;') + '">' +
+        '<label class="card-sub cb-only" style="display:block">' + (isCB() ? 'CLIENT NAME \u2014 SURNAME FIRST NAME MIDDLE INITIAL' : 'CLIENT NAME') + '</label>' +
+        '<input type="text" class="nameInput cb-only" data-ci="' + i + '" placeholder="' + (isCB() ? 'DELA CRUZ CLARISSE JANE S' : 'First Name Middle Name Surname') + '" value="' + (c.name || '').replace(/"/g, '&quot;') + '">' +
         '<div class="name-row"><div class="fname preview" id="preview-' + i + '">' + folderPreview(clean, c) + '</div>' +
         (c.ids.some(isImg) ? '<button class="read-btn cb-only" data-ci="' + i + '">Read name</button>' : '') + '</div>' +
         '<div class="name-note" id="namenote-' + i + '">' + (readErrors.get(c) && !c.name ? readErrors.get(c) + ' \u2014 retake a clearer photo or tap Read name.' : '') + '</div>' +
@@ -1121,10 +1125,6 @@ mergeAllBtn.addEventListener('click', async () => {
   }
   if (isCB() && clients.some(c => !sanitizeName(c.name || ''))) {
     notify('Type a name for every client before saving.');
-    return;
-  }
-  if (isCB() && clients.some(c => (c.name || '').indexOf(',') < 0)) {
-    notify('Type each name as SURNAME, FIRST NAME MIDDLE NAME (with a comma).');
     return;
   }
   if (!isCB() && clients.some(c => c.ids.some(f => !f.idType))) {
