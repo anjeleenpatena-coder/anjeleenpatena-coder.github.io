@@ -149,6 +149,11 @@ form.qrow{grid-column:1/-1;display:flex;gap:8px;background:none;border-radius:0;
 .dv-card .calc{margin:0}
 .dv-cta{display:grid;gap:10px}
 @media(min-width:760px){.dv-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}.dv-cols .dv-card{margin-bottom:0}}
+.card[hidden]{display:none}
+.otabs{display:flex;gap:6px;padding:10px 10px 0;flex-wrap:wrap}
+.otabs button{flex:1;min-height:42px;border:1.5px solid var(--navy);background:var(--white);color:var(--navy);border-radius:999px;font:700 14px var(--sans);cursor:pointer;padding:0 12px}
+.otabs button[aria-selected=true]{background:var(--navy);color:var(--white)}
+.dv-otabs{padding:0 0 12px}
 .lb-title{color:var(--white);font-size:14px;margin-bottom:10px;text-align:center;max-width:90vw}
 .calc{border:1px solid var(--line);border-radius:12px;margin:0 0 12px;background:var(--mist)}
 .calc summary{padding:10px 14px;font-size:14px;font-weight:600;color:var(--navy);cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;min-height:44px}
@@ -467,7 +472,9 @@ function render(){
   var min=0,max=Infinity; if(b){var p=b.split("-");min=+p[0];max=+p[1]}
   var list = LISTINGS.filter(function(l){return l.mode===mode && (!t||l.type===t) && (!loc||l.location===loc) && +l.price>=min && +l.price<=max && (!src||(src==='owner'&&l.direct_owner)||(src==='4ph'&&/4PH/i.test(l.badge||''))||(src==='pre'&&l.status==='Pre-Selling')||(src==='rfo'&&l.status==='Ready for Occupancy')) && (!inc||isLot(l)||(l.min_income!=null&&+l.min_income<=iHi)) && (!qw.length||qw.every(function(w){return hay(l).indexOf(w)>-1}))});
   if(inc){ list.sort(function(x,y){return (isLot(x)?1e15:x.min_income)-(isLot(y)?1e15:y.min_income)}); var noInc=LISTINGS.filter(function(l){return l.mode===mode&&l.min_income==null&&!isLot(l)}).length; $("#incNote").innerHTML="Showing homes that match your income. Final approval depends on Pag-IBIG or bank evaluation."+(noInc?" "+noInc+(noInc===1?" more listing needs":" more listings need")+" a personal computation. <a href=\"#contact\">Message me</a>.":""); $("#incNote").hidden=false; } else $("#incNote").hidden=true;
-  $("#count").textContent = list.length + (list.length===1?" property":" properties") + (mode==="Sale"?" for sale":" for rent");
+  list = groupOrder(list);
+  var nProp = list.filter(function(l){return !l._sub}).length;
+  $("#count").textContent = nProp + (nProp===1?" property":" properties") + (mode==="Sale"?" for sale":" for rent");
   if(!list.length){
     $("#grid").innerHTML = '<div class="empty">No match yet. Tell me what you need, and I\'ll find it for you.<br><br><a class="btn btn-navy" href="#contact">Message me</a></div>';
     return;
@@ -484,7 +491,7 @@ function render(){
         '<button type="button" class="sarrow prev" data-step="-1" data-for="'+i+'" aria-label="Previous photo">‹</button><button type="button" class="sarrow next" data-step="1" data-for="'+i+'" aria-label="Next photo">›</button>'+
         '<span class="pcount" data-pc="'+i+'">1 / '+ph.length+'</span>'
       : img;
-    return '<article class="card"><div class="thumb">'+photoArea+
+    return '<article class="card"'+(l._sub?' hidden':'')+(l.group_name?' data-grp="'+esc(l.group_name)+'" data-gi="'+i+'"':'')+'>'+optTabs(l,list,i)+'<div class="thumb">'+photoArea+
       '<span class="tag'+(l.mode==="Rent"?' rent':'')+'">'+esc(l.type)+(l.mode==="Rent"?' for rent':'')+'</span>'+((l.direct_owner||l.badge)?'<span class="owner-wrap">'+(l.direct_owner?'<span class="owner">Direct to Owner</span>':'')+String(l.badge||'').split('|').map(function(b){b=b.trim();return b?'<span class="owner'+(/sold out/i.test(b)?' sold':'')+'">'+esc(b)+'</span>':''}).join('')+'</span>':'')+'</div>'+
       (multi?'<div class="strip" data-strip="'+i+'">'+ph.map(function(u,k){return '<button type="button" data-jump="'+i+'" data-at="'+k+'" aria-label="Show photo '+(k+1)+'"'+(k?'':' aria-current="true"')+'><img src="'+esc(u)+'" alt="" loading="lazy"></button>'}).join("")+'</div>':'')+
       '<div class="card-body"><div class="price">'+peso(l.price)+(l.mode==="Rent"?'<small style="font-size:15px">/month</small>':'')+'</div>'+
@@ -570,6 +577,37 @@ document.addEventListener("click",function(e){
 
 /* ---------- full details view (shareable link #listing-<id>) ---------- */
 var DV=null;
+/* ---------- grouped options (one project, several unit types) ---------- */
+function groupOrder(list){
+  var out=[], seen={};
+  list.forEach(function(l){
+    if(!l.group_name){ out.push(l); return; }
+    if(seen[l.group_name]) return; seen[l.group_name]=1;
+    list.filter(function(x){return x.group_name===l.group_name}).forEach(function(x,k){ x._sub = k>0; out.push(x); });
+  });
+  return out;
+}
+function optTabs(l,list,i){
+  if(!l.group_name) return "";
+  var mates=[]; list.forEach(function(x,k){ if(x.group_name===l.group_name) mates.push(k); });
+  if(mates.length<2) return "";
+  return '<div class="otabs" role="tablist" aria-label="Unit options">'+mates.map(function(k){ var x=list[k];
+    return '<button type="button" role="tab" aria-selected="'+(k===i)+'" data-opt="'+k+'">'+esc(x.option_label||x.type)+'</button>'; }).join("")+'</div>';
+}
+document.addEventListener("click",function(e){
+  var b=e.target.closest("[data-opt]"); if(!b) return;
+  if(b.closest("#dv")){ dvOpen(LISTINGS.filter(function(x){return String(x.id)===b.dataset.opt})[0], false); try{ history.replaceState(history.state,"","#listing-"+b.dataset.opt); }catch(_){} return; }
+  var card=b.closest("article"), g=card.dataset.grp;
+  document.querySelectorAll('#grid article[data-grp="'+g+'"]').forEach(function(a){ a.hidden = a.dataset.gi!==b.dataset.opt; });
+  var shown=document.querySelector('#grid article[data-gi="'+b.dataset.opt+'"] [data-opt="'+b.dataset.opt+'"]'); if(shown) shown.focus();
+});
+function dvTabs(l){
+  if(!l.group_name) return "";
+  var mates=LISTINGS.filter(function(x){return x.group_name===l.group_name});
+  if(mates.length<2) return "";
+  return '<div class="otabs dv-otabs" role="tablist" aria-label="Unit options">'+mates.map(function(x){
+    return '<button type="button" role="tab" aria-selected="'+(x.id===l.id)+'" data-opt="'+esc(x.id)+'">'+esc(x.option_label||x.type)+'</button>'; }).join("")+'</div>';
+}
 function dvHtml(l){
   var ph=gallery(l), perks=String(l.perks||"").split(/\n+/).map(function(x){return x.trim()}).filter(Boolean);
   var badges=[l.type+(l.mode==="Rent"?" for rent":"")].concat(l.direct_owner?["Direct to Owner"]:[]).concat(String(l.badge||"").split("|").map(function(b){return b.trim()}).filter(Boolean));
@@ -577,7 +615,7 @@ function dvHtml(l){
   var cta = /sold out/i.test(l.badge||'') ? '<a class="btn btn-navy" data-wait="'+esc(l.title)+'" href="#contact">Notify me when it re-opens</a>'
     : '<a class="btn btn-coral" '+(CONFIG.calendly?'target="_blank" rel="noopener" ':'data-ask="'+esc(l.title)+'" ')+'href="'+esc(CONFIG.calendly||"#contact")+'">Schedule a viewing</a>';
   var rq=dvReqs(l.reqs);
-  return (ph.length?'<button type="button" class="dv-hero" data-dvph="0" aria-label="Open photos full screen"><img src="'+esc(ph[0])+'" alt="'+esc(l.title)+'"><span>⤢ '+ph.length+' photo'+(ph.length>1?'s':'')+' · tap for full screen</span></button>'+
+  return dvTabs(l)+(ph.length?'<button type="button" class="dv-hero" data-dvph="0" aria-label="Open photos full screen"><img src="'+esc(ph[0])+'" alt="'+esc(l.title)+'"><span>⤢ '+ph.length+' photo'+(ph.length>1?'s':'')+' · tap for full screen</span></button>'+
       (ph.length>1?'<div class="dv-thumbs">'+ph.map(function(u,k){return '<button type="button" data-dvph="'+k+'" aria-label="Photo '+(k+1)+' full screen"><img src="'+esc(u)+'" alt="" loading="lazy"></button>'}).join("")+'</div>':'<div style="height:14px"></div>'):'')+
     '<div class="dv-card"><div class="dv-badges">'+badges.map(function(b){return '<span>'+esc(b)+'</span>'}).join("")+'</div>'+
       '<h2>'+esc(l.title)+'</h2><div class="loc">📍 '+esc(l.location)+'</div>'+
