@@ -124,6 +124,31 @@ form.qrow{grid-column:1/-1;display:flex;gap:8px;background:none;border-radius:0;
 .lb-bar{display:flex;align-items:center;gap:14px;margin-top:14px;color:var(--white);font-size:14px}
 .lb button{min-width:44px;min-height:44px;border:0;border-radius:999px;background:var(--white);color:var(--navy);font:600 18px var(--sans);cursor:pointer}
 .lb .lb-x{position:absolute;top:14px;right:14px}
+.card h3 .dlink{all:unset;cursor:pointer}
+.card h3 .dlink:hover{color:var(--coral-dark);text-decoration:underline}
+.btn-more{background:var(--white);color:var(--navy);border:1.5px solid var(--navy);margin-bottom:8px}
+.btn-more:hover{background:var(--mist)}
+.dv{position:fixed;inset:0;background:var(--mist);z-index:900;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.dv[hidden]{display:none}
+.dv-bar{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--navy);color:var(--white)}
+.dv-bar b{flex:1;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dv-bar button{min-height:40px;border:0;border-radius:999px;padding:0 14px;font:600 14px var(--sans);cursor:pointer;background:rgba(255,255,255,.14);color:var(--white)}
+.dv-in{max-width:980px;margin:0 auto;padding:16px 14px 60px}
+.dv-hero{position:relative;border-radius:16px;overflow:hidden;background:#0d1b2e;cursor:zoom-in;border:0;padding:0;display:block;width:100%}
+.dv-hero img{width:100%;max-height:70vh;object-fit:contain;display:block}
+.dv-hero span{position:absolute;right:10px;bottom:10px;background:rgba(10,20,35,.75);color:#fff;font:600 13px var(--sans);padding:6px 12px;border-radius:999px}
+.dv-thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;margin:10px 0 18px}
+.dv-thumbs button{border:0;padding:0;border-radius:10px;overflow:hidden;cursor:zoom-in;aspect-ratio:1;background:#E3EAF3}
+.dv-thumbs img{width:100%;height:100%;object-fit:cover;display:block}
+.dv-card{background:var(--white);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:14px}
+.dv-card h2{font-size:clamp(22px,3.4vw,30px);margin:6px 0 4px}
+.dv-card h3{font-size:17px;color:var(--navy);margin:0 0 10px}
+.dv-badges{display:flex;flex-wrap:wrap;gap:6px}
+.dv-badges span{background:var(--mist);color:var(--navy);font:700 12px var(--sans);padding:5px 10px;border-radius:999px;border:1px solid var(--line)}
+.dv-price{font-family:var(--serif);font-size:30px;color:var(--navy)}
+.dv-card .calc{margin:0}
+.dv-cta{display:grid;gap:10px}
+@media(min-width:760px){.dv-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}.dv-cols .dv-card{margin-bottom:0}}
 .lb-title{color:var(--white);font-size:14px;margin-bottom:10px;text-align:center;max-width:90vw}
 .calc{border:1px solid var(--line);border-radius:12px;margin:0 0 12px;background:var(--mist)}
 .calc summary{padding:10px 14px;font-size:14px;font-weight:600;color:var(--navy);cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;min-height:44px}
@@ -276,6 +301,10 @@ footer a{color:#BFCDE0}
     <div class="grid" id="grid"></div>
   </div>
 </section>
+<div class="dv" id="dv" hidden role="dialog" aria-modal="true" aria-label="Property details">
+  <div class="dv-bar"><button type="button" id="dvX" aria-label="Back to listings">‹ Back</button><b id="dvBarT"></b><button type="button" id="dvShare">Share</button></div>
+  <div class="dv-in" id="dvBody"></div>
+</div>
 <div class="lb" id="lb" hidden role="dialog" aria-modal="true" aria-label="Property photos">
   <button type="button" class="lb-x" id="lbX" aria-label="Close photos">×</button>
   <div class="lb-title" id="lbTitle"></div>
@@ -459,9 +488,9 @@ function render(){
       '<span class="tag'+(l.mode==="Rent"?' rent':'')+'">'+esc(l.type)+(l.mode==="Rent"?' for rent':'')+'</span>'+((l.direct_owner||l.badge)?'<span class="owner-wrap">'+(l.direct_owner?'<span class="owner">Direct to Owner</span>':'')+String(l.badge||'').split('|').map(function(b){b=b.trim();return b?'<span class="owner'+(/sold out/i.test(b)?' sold':'')+'">'+esc(b)+'</span>':''}).join('')+'</span>':'')+'</div>'+
       (multi?'<div class="strip" data-strip="'+i+'">'+ph.map(function(u,k){return '<button type="button" data-jump="'+i+'" data-at="'+k+'" aria-label="Show photo '+(k+1)+'"'+(k?'':' aria-current="true"')+'><img src="'+esc(u)+'" alt="" loading="lazy"></button>'}).join("")+'</div>':'')+
       '<div class="card-body"><div class="price">'+peso(l.price)+(l.mode==="Rent"?'<small style="font-size:15px">/month</small>':'')+'</div>'+
-      (inc&&isLot(l)?'<span class="inc-ok">No income requirement</span>':'')+(inc&&l.min_income!=null?'<span class="inc-ok'+(+l.min_income>iLo?' maybe':'')+'">'+(+l.min_income>iLo?'May qualify · needs ₱':'You qualify · needs ₱')+Math.round(l.min_income).toLocaleString('en-PH')+'/mo</span>':'')+'<div class="monthly">'+esc(l.monthly)+'</div><h3>'+esc(l.title)+'</h3><div class="loc">'+esc(l.location)+'</div><div class="meta">'+esc(l.meta)+'</div>'+
+      (inc&&isLot(l)?'<span class="inc-ok">No income requirement</span>':'')+(inc&&l.min_income!=null?'<span class="inc-ok'+(+l.min_income>iLo?' maybe':'')+'">'+(+l.min_income>iLo?'May qualify · needs ₱':'You qualify · needs ₱')+Math.round(l.min_income).toLocaleString('en-PH')+'/mo</span>':'')+'<div class="monthly">'+esc(l.monthly)+'</div><h3><button type="button" class="dlink" data-detail="'+i+'">'+esc(l.title)+'</button></h3><div class="loc">'+esc(l.location)+'</div><div class="meta">'+esc(l.meta)+'</div>'+
       calcBox(l.calc,i)+reqBox(l.reqs,i)+(perks.length?'<ul class="perks">'+perks.map(function(x){return '<li>'+esc(x)+'</li>'}).join("")+'</ul>':'')+
-      (/sold out/i.test(l.badge||'')?'<a class="btn btn-navy" data-wait="'+esc(l.title)+'" href="#contact">Notify me when it re-opens</a></div></article>':
+      '<button type="button" class="btn btn-more" data-detail="'+i+'">View full details &amp; photos</button>'+(/sold out/i.test(l.badge||'')?'<a class="btn btn-navy" data-wait="'+esc(l.title)+'" href="#contact">Notify me when it re-opens</a></div></article>':
       '<a class="btn btn-coral" '+(CONFIG.calendly?'target="_blank" rel="noopener" ':'data-ask="'+esc(l.title)+'" ')+'href="'+esc(viewHref)+'">Schedule a viewing</a></div></article>');
   }).join("");
 }
@@ -493,23 +522,24 @@ function reqBox(txt,i){
   var lines=String(txt||"").split(/\n/); var groups=[], steps=[], g=null;
   lines.forEach(function(raw){ var t=raw.trim(); if(!t) return;
     if(/^step:/i.test(t)){ steps.push(t.replace(/^step:\s*/i,"")); return; }
+    if(/^note:/i.test(t)){ steps.push(t.replace(/^note:\s*/i,"Note: ")); return; }
     if(t.slice(0,2)==="##"){ g={name:t.replace(/^#+\s*/,""),items:[]}; groups.push(g); return; }
     if(!g) return;
     if(t.charAt(0)==="-"){ var last=g.items[g.items.length-1]; if(last) last.sub.push(t.replace(/^-\s*/,"")); return; }
     g.items.push({text:t,sub:[]});
   });
-  if(!groups.length) return "";
+  if(!groups.length && !steps.length) return "";
   var lists=groups.map(function(gr,k){ return '<ol class="rl" data-rg="'+i+'" data-k="'+k+'"'+(k?' hidden':'')+'>'+gr.items.map(function(it){return '<li>'+esc(it.text)+(it.sub.length?'<ul>'+it.sub.map(function(x){return '<li>'+esc(x)+'</li>'}).join("")+'</ul>':'')+'</li>'}).join("")+'</ol>'; }).join("");
   return '<details class="calc reqs"><summary>List of requirements</summary>'+
     (steps.length?'<ol class="steps-mini">'+steps.map(function(x){return '<li>'+esc(x)+'</li>'}).join("")+'</ol>':'')+
-    '<div class="pick"><label for="rq'+i+'">Your source of income</label><select id="rq'+i+'" data-rsel="'+i+'">'+groups.map(function(gr,k){return '<option value="'+k+'">'+esc(gr.name)+'</option>'}).join("")+'</select></div>'+lists+'</details>';
+    (groups.length?'<div class="pick"><label for="rq'+i+'">'+(groups.length>1?'Your source of income':'Documents')+'</label><select id="rq'+i+'" data-rsel="'+i+'">'+groups.map(function(gr,k){return '<option value="'+k+'">'+esc(gr.name)+'</option>'}).join("")+'</select></div>':'')+lists+'</details>';
 }
 document.addEventListener("change",function(e){ var s=e.target.closest("[data-rsel]"); if(!s) return; document.querySelectorAll('[data-rg="'+s.dataset.rsel+'"]').forEach(function(o){ o.hidden = o.dataset.k!==s.value; }); });
 function gallery(l){ var p=Array.isArray(l.photos)?l.photos.filter(Boolean):[]; if(l.img && p.indexOf(l.img)<0) p.unshift(l.img); return p; }
 var SHOWN=[], LB={p:[],i:0,last:null};
 function lbShow(){ $("#lbImg").src=LB.p[LB.i]; $("#lbImg").alt=LB.t+" — photo "+(LB.i+1); $("#lbCount").textContent=(LB.i+1)+" / "+LB.p.length; }
 function lbOpen(l,from,at){ LB.p=gallery(l); LB.i=at||0; LB.t=l.title; LB.last=from; $("#lbTitle").textContent=l.title; lbShow(); $("#lb").hidden=false; document.body.style.overflow="hidden"; $("#lbX").focus(); }
-function lbClose(){ $("#lb").hidden=true; document.body.style.overflow=""; if(LB.last) LB.last.focus(); }
+function lbClose(){ $("#lb").hidden=true; document.body.style.overflow=$("#dv").hidden?"":"hidden"; if(LB.last) LB.last.focus(); }
 function lbStep(d){ LB.i=(LB.i+d+LB.p.length)%LB.p.length; lbShow(); }
 $("#lbX").addEventListener("click",lbClose); $("#lbPrev").addEventListener("click",function(){lbStep(-1)}); $("#lbNext").addEventListener("click",function(){lbStep(1)});
 $("#lb").addEventListener("click",function(e){ if(e.target.id==="lb") lbClose(); });
@@ -537,6 +567,66 @@ document.addEventListener("click",function(e){
   box.addEventListener("touchend",function(e){ if(x0==null) return; var dx=e.changedTouches[0].clientX-x0; if(Math.abs(dx)>40) lbStep(dx<0?1:-1); x0=null; });
 })();
 ["#fType","#fLoc","#fBudget","#fSource","#fInc"].forEach(function(s){$(s).addEventListener("change",render)});
+
+/* ---------- full details view (shareable link #listing-<id>) ---------- */
+var DV=null;
+function dvHtml(l){
+  var ph=gallery(l), perks=String(l.perks||"").split(/\n+/).map(function(x){return x.trim()}).filter(Boolean);
+  var badges=[l.type+(l.mode==="Rent"?" for rent":"")].concat(l.direct_owner?["Direct to Owner"]:[]).concat(String(l.badge||"").split("|").map(function(b){return b.trim()}).filter(Boolean));
+  if(l.status && badges.indexOf(l.status)<0) badges.push(l.status);
+  var cta = /sold out/i.test(l.badge||'') ? '<a class="btn btn-navy" data-wait="'+esc(l.title)+'" href="#contact">Notify me when it re-opens</a>'
+    : '<a class="btn btn-coral" '+(CONFIG.calendly?'target="_blank" rel="noopener" ':'data-ask="'+esc(l.title)+'" ')+'href="'+esc(CONFIG.calendly||"#contact")+'">Schedule a viewing</a>';
+  var rq=dvReqs(l.reqs);
+  return (ph.length?'<button type="button" class="dv-hero" data-dvph="0" aria-label="Open photos full screen"><img src="'+esc(ph[0])+'" alt="'+esc(l.title)+'"><span>⤢ '+ph.length+' photo'+(ph.length>1?'s':'')+' · tap for full screen</span></button>'+
+      (ph.length>1?'<div class="dv-thumbs">'+ph.map(function(u,k){return '<button type="button" data-dvph="'+k+'" aria-label="Photo '+(k+1)+' full screen"><img src="'+esc(u)+'" alt="" loading="lazy"></button>'}).join("")+'</div>':'<div style="height:14px"></div>'):'')+
+    '<div class="dv-card"><div class="dv-badges">'+badges.map(function(b){return '<span>'+esc(b)+'</span>'}).join("")+'</div>'+
+      '<h2>'+esc(l.title)+'</h2><div class="loc">📍 '+esc(l.location)+'</div>'+
+      '<div class="dv-price" style="margin-top:10px">'+(+l.price?peso(l.price):'Price on request')+(l.mode==="Rent"?'<small style="font-size:15px">/month</small>':'')+'</div>'+
+      '<div class="monthly">'+esc(l.monthly)+'</div>'+(l.min_income!=null?'<div class="meta" style="padding:4px 0 0">Required gross monthly income: <b>₱'+Math.round(l.min_income).toLocaleString('en-PH')+'</b></div>':'')+
+      '<div class="meta" style="padding:8px 0 0">'+esc(l.meta)+'</div></div>'+
+    (perks.length?'<div class="dv-card"><h3>Features &amp; highlights</h3><ul class="perks">'+perks.map(function(x){return '<li>'+esc(x)+'</li>'}).join("")+'</ul></div>':'')+
+    '<div class="dv-cols">'+(l.calc?'<div class="dv-card"><h3>Sample computation</h3>'+calcBox(l.calc,"dv").replace('<details class="calc">','<details class="calc" open>')+'</div>':'')+
+      (rq?'<div class="dv-card"><h3>Steps &amp; requirements</h3>'+rq+'</div>':'')+'</div>'+
+    '<div class="dv-card dv-cta">'+cta+'<a class="btn btn-navy" href="#contact" data-ask="'+esc(l.title)+'">Ask about this property</a></div>';
+}
+/* all requirement groups shown at once (no dropdown) for easy client review */
+function dvReqs(txt){
+  var steps=[], groups=[], g=null;
+  String(txt||"").split(/\n/).forEach(function(raw){ var t=raw.trim(); if(!t) return;
+    if(/^step:/i.test(t)){ steps.push(t.replace(/^step:\s*/i,"")); return; }
+    if(/^note:/i.test(t)){ steps.push("Note: "+t.replace(/^note:\s*/i,"")); return; }
+    if(t.slice(0,2)==="##"){ g={name:t.replace(/^#+\s*/,""),items:[]}; groups.push(g); return; }
+    if(!g) return;
+    if(t.charAt(0)==="-"){ var last=g.items[g.items.length-1]; if(last) last.sub.push(t.replace(/^-\s*/,"")); return; }
+    g.items.push({text:t,sub:[]});
+  });
+  if(!steps.length && !groups.length) return "";
+  return (steps.length?'<ol class="steps-mini">'+steps.map(function(x){return '<li>'+esc(x)+'</li>'}).join("")+'</ol>':'')+
+    groups.map(function(gr){ return '<h4 style="margin:14px 0 6px;color:var(--navy);font-size:15px">'+esc(gr.name)+'</h4><ol class="rl">'+gr.items.map(function(it){return '<li>'+esc(it.text)+(it.sub.length?'<ul>'+it.sub.map(function(x){return '<li>'+esc(x)+'</li>'}).join("")+'</ul>':'')+'</li>'}).join("")+'</ol>'; }).join("");
+}
+function dvOpen(l, push){
+  if(!l) return; DV=l;
+  $("#dvBarT").textContent=l.title; $("#dvBody").innerHTML=dvHtml(l);
+  $("#dv").hidden=false; $("#dv").scrollTop=0; document.body.style.overflow="hidden";
+  if(push!==false && l.id){ try{ history.pushState({dv:l.id},"","#listing-"+l.id); }catch(_){} }
+  $("#dvX").focus();
+}
+function dvHide(){ $("#dv").hidden=true; DV=null; if($("#lb").hidden) document.body.style.overflow=""; }
+function dvClose(){ if(history.state && history.state.dv){ history.back(); } else { dvHide(); try{ history.replaceState(null,"",location.pathname+location.search+"#listings"); }catch(_){} } }
+window.addEventListener("popstate",function(){ var m=location.hash.match(/^#listing-(.+)$/); if(m){ var l=LISTINGS.filter(function(x){return String(x.id)===m[1]})[0]; if(l){ dvOpen(l,false); return; } } if(!$("#dv").hidden) dvHide(); });
+$("#dvX").addEventListener("click",dvClose);
+$("#dvShare").addEventListener("click",function(){
+  if(!DV) return; var url=location.origin+location.pathname+"#listing-"+DV.id, b=this;
+  if(navigator.share){ navigator.share({title:DV.title,text:DV.title+(+DV.price?" — "+peso(DV.price):""),url:url}).catch(function(){}); return; }
+  try{ navigator.clipboard.writeText(url).then(function(){ b.textContent="Link copied ✓"; setTimeout(function(){b.textContent="Share"},2000); }); }catch(_){ prompt("Copy this link:",url); }
+});
+document.addEventListener("click",function(e){
+  var d=e.target.closest("[data-detail]"); if(d){ dvOpen(SHOWN[+d.dataset.detail]); return; }
+  var p=e.target.closest("[data-dvph]"); if(p && DV){ lbOpen(DV,p,+p.dataset.dvph); return; }
+  var a=e.target.closest('#dv a[href="#contact"]'); if(a){ dvHide(); try{ history.replaceState(null,"",location.pathname+"#contact"); }catch(_){} }
+});
+document.addEventListener("keydown",function(e){ if(e.key==="Escape" && $("#lb").hidden && !$("#dv").hidden) dvClose(); });
+function dvFromHash(){ var m=location.hash.match(/^#listing-(.+)$/); if(!m) return; var l=LISTINGS.filter(function(x){return String(x.id)===m[1]})[0]; if(l) dvOpen(l,false); }
 function norm(x){return String(x||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")}
 function isLot(l){return l.type==="Lot / Land"||l.type==="Memorial Lot"}
 function hay(l){return norm([l.title,l.location,l.meta,l.perks,l.badge,l.status,l.type].join(" "))}
@@ -570,7 +660,7 @@ async function load(){
     var l = await sb.from("re_listings").select("*").eq("active",true).order("sort").order("created_at",{ascending:false});
     LISTINGS = l.data || [];
   }catch(_){}
-  applyConfig(); fillFilters(); render();
+  applyConfig(); fillFilters(); render(); dvFromHash();
 }
 load();
 </script>
